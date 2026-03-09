@@ -4,6 +4,10 @@ import { Helmet } from 'react-helmet-async';
 import Layout from '@/components/Layout';
 import LocationStat from '@/components/LocationStat';
 import RunMap from '@/components/RunMap';
+<div className="mt-8">
+  <h2 className="text-xl font-bold mb-4">我的全球足迹墙</h2>
+  <TrackWall activities={activities} />
+</div>
 import RunTable from '@/components/RunTable';
 import SVGStat from '@/components/SVGStat';
 import YearsStat from '@/components/YearsStat';
@@ -11,6 +15,7 @@ import useActivities from '@/hooks/useActivities';
 import useSiteMetadata from '@/hooks/useSiteMetadata';
 import { useInterval } from '@/hooks/useInterval';
 import { IS_CHINESE } from '@/utils/const';
+import { TrackWall } from '../components/TrackWall';
 import {
   Activity,
   IViewState,
