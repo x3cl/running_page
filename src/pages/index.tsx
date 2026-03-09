@@ -143,54 +143,70 @@ const Index = () => {
   return (
     <Layout>
       <Helmet><html lang="en" data-theme={theme} /></Helmet>
-      <div className="w-full lg:w-1/3">
-        <h1 className="my-12 mt-6 text-5xl font-extrabold italic"><a href={siteUrl}>{siteTitle}</a></h1>
-        {(viewState.zoom ?? 0) <= 3 && IS_CHINESE ? (
-          <LocationStat changeYear={changeYear} changeCity={s => changeByItem(s, 'City', filterCityRuns)} changeTitle={s => changeByItem(s, 'Title', filterTitleRuns)} />
-        ) : (
-          <YearsStat year={year} onClick={changeYear} />
-        )}
-      </div>
-      <div className="w-full lg:w-2/3" id="map-container">
-        {/* 地理地图改为可选，或者直接移除以消除分散布局的影响 */}
-        {/* <RunMap title={title} viewState={viewState} geoData={animatedGeoData} setViewState={setViewState} changeYear={changeYear} thisYear={year} animationTrigger={animationTrigger} /> */}
+      
+      {/* 顶部：标题与年份导航（全宽） */}
+      <div className="w-full">
+        <h1 className="my-8 mt-6 text-4xl font-extrabold italic text-center lg:text-left">
+          <a href={siteUrl}>{siteTitle}</a>
+        </h1>
         
-        {/* 核心展示：去地理化的足迹海报墙 */}
-        <div className="bg-black p-6 rounded-2xl shadow-2xl mb-8 border border-gray-800">
-          <div className="flex justify-between items-end mb-6 border-b border-gray-800 pb-4">
+        <div className="mb-10">
+          {(viewState.zoom ?? 0) <= 3 && IS_CHINESE ? (
+            <LocationStat 
+              changeYear={changeYear} 
+              changeCity={s => changeByItem(s, 'City', filterCityRuns)} 
+              changeTitle={s => changeByItem(s, 'Title', filterTitleRuns)} 
+            />
+          ) : (
+            <YearsStat year={year} onClick={changeYear} />
+          )}
+        </div>
+      </div>
+
+      {/* 中间：全宽海报墙 */}
+      <div className="w-full" id="map-container">
+        <div className="bg-black p-6 rounded-2xl shadow-2xl mb-12 border border-gray-800">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-800 pb-6 gap-4">
             <div>
-              <h2 className="text-3xl font-black italic text-white tracking-tighter uppercase">
-                {year} Running Poster
+              <h2 className="text-4xl font-black italic text-white tracking-tighter uppercase leading-none">
+                {year} RUNNING POSTER
               </h2>
-              <p className="text-gray-500 font-mono text-[10px] mt-1 tracking-widest">
-                DE-GEOSPATIAL COMPACT GRID
+              <p className="text-gray-500 font-mono text-xs mt-2 tracking-[0.3em] uppercase opacity-70">
+                De-Geospatial Compact Trace Grid
               </p>
             </div>
-            <div className="text-right flex space-x-4">
-              <div>
-                <div className="text-white text-xl font-bold font-mono leading-none">{runs.length}</div>
-                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Runs</div>
+            
+            <div className="flex space-x-8">
+              <div className="text-center">
+                <div className="text-white text-3xl font-bold font-mono leading-none">{runs.length}</div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1">Activities</div>
               </div>
-              <div>
-                <div className="text-white text-xl font-bold font-mono leading-none">
+              <div className="text-center">
+                <div className="text-white text-3xl font-bold font-mono leading-none">
                   {Math.round(runs.reduce((acc, r) => acc + r.distance, 0) / 1000)}
                 </div>
-                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Total KM</div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1">Total KM</div>
               </div>
             </div>
           </div>
           
-          {/* 这里传入 runs (当前过滤的数据) 而非 activities (全量数据) */}
           <TrackWall activities={runs} />
         </div>
 
-        {year === 'Total' ? <SVGStat /> : (
-          <RunTable runs={runs} locateActivity={locateActivity} setActivity={() => { }} runIndex={runIndex} setRunIndex={setRunIndex} />
-        )}
+        {/* 底部：详细数据表格 */}
+        <div className="mt-12">
+          {year === 'Total' ? <SVGStat /> : (
+            <RunTable 
+              runs={runs} 
+              locateActivity={locateActivity} 
+              setActivity={() => { }} 
+              runIndex={runIndex} 
+              setRunIndex={setRunIndex} 
+            />
+          )}
+        </div>
       </div>
+      
       {import.meta.env.VERCEL && <Analytics />}
     </Layout>
   );
-};
-
-export default Index;
