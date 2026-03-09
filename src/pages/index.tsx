@@ -152,14 +152,41 @@ const Index = () => {
         )}
       </div>
       <div className="w-full lg:w-2/3" id="map-container">
-        <RunMap title={title} viewState={viewState} geoData={animatedGeoData} setViewState={setViewState} changeYear={changeYear} thisYear={year} animationTrigger={animationTrigger} />
+        {/* 地理地图改为可选，或者直接移除以消除分散布局的影响 */}
+        {/* <RunMap title={title} viewState={viewState} geoData={animatedGeoData} setViewState={setViewState} changeYear={changeYear} thisYear={year} animationTrigger={animationTrigger} /> */}
+        
+        {/* 核心展示：去地理化的足迹海报墙 */}
+        <div className="bg-black p-6 rounded-2xl shadow-2xl mb-8 border border-gray-800">
+          <div className="flex justify-between items-end mb-6 border-b border-gray-800 pb-4">
+            <div>
+              <h2 className="text-3xl font-black italic text-white tracking-tighter uppercase">
+                {year} Running Poster
+              </h2>
+              <p className="text-gray-500 font-mono text-[10px] mt-1 tracking-widest">
+                DE-GEOSPATIAL COMPACT GRID
+              </p>
+            </div>
+            <div className="text-right flex space-x-4">
+              <div>
+                <div className="text-white text-xl font-bold font-mono leading-none">{runs.length}</div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Runs</div>
+              </div>
+              <div>
+                <div className="text-white text-xl font-bold font-mono leading-none">
+                  {Math.round(runs.reduce((acc, r) => acc + r.distance, 0) / 1000)}
+                </div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">Total KM</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* 这里传入 runs (当前过滤的数据) 而非 activities (全量数据) */}
+          <TrackWall activities={runs} />
+        </div>
+
         {year === 'Total' ? <SVGStat /> : (
           <RunTable runs={runs} locateActivity={locateActivity} setActivity={() => { }} runIndex={runIndex} setRunIndex={setRunIndex} />
         )}
-        <div className="mt-12 mb-8">
-          <h2 className="text-2xl font-bold mb-6 italic text-red-500">我的全球足迹墙</h2>
-          <TrackWall activities={activities} />
-        </div>
       </div>
       {import.meta.env.VERCEL && <Analytics />}
     </Layout>
