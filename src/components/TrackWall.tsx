@@ -1,73 +1,110 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import polyline from '@mapbox/polyline';
 
-export const TrackWall = ({ activities }: { activities: any[] }) => {
-  // 仅筛选有轨迹数据的运动
-  const filtered = activities.filter(a => a.summary_polyline);
+// 1. 轨迹路径归一化与聚类
+const processOrganicTracks = (activities: any[]) => {
+  const clusters: Record<string, { path: string; count: number; type: string; points: number[][] }> = {};
   
-  if (filtered.length === 0) {
-    return <div className="text-gray-500 py-20 text-center font-mono">NO TRACK DATA FOUND</div>;
-  }
+  activities.filter(a => a.summary_polyline).forEach(activity => {
+    const points = polyline.decode(activity.summary_polyline);
+    if (points.length < 2) return;
+
+    // 创建路径指纹（基于起终点和中间点简化坐标，识别“同一条路”）
+    const fingerprint = `${points[0][0].toFixed(3)}-${points[points.length-1][0].toFixed(3)}`;
+    
+    if (clusters[fingerprint]) {
+      clusters[fingerprint].count += 1; // 相同路径叠加权重
+    } else {
+      clusters[fingerprint] = {
+        path: activity.summary_polyline,
+        count: 1,
+        type: activity.type,
+        points: points
+      };
+    }
+  });
+  return Object.values(clusters);
+};
+
+export const TrackWeb = ({ activities }: { activities: any[] }) => {
+  const processedTracks = useMemo(() => processOrganicTracks(activities), [activities]);
+
+  // 2. 布局算法：螺旋增长排布（让不同轨迹相切连接）
+  const renderedPaths = useMemo(() => {
+    let currentX = 500;
+    let currentY = 500;
+    const spacing = 120; // 轨迹间的间距
+
+    return processedTracks.map((track, index) => {
+      const points = track.points;
+      const lats = points.map(p => p[0]);
+      const lons = points.map(p => p[1]);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLon = Math.min(...lons);
+      const maxLon = Math.max(...lons);
+      
+      const range = Math.max(maxLat - minLat, maxLon - minLon) || 0.001;
+      const scale = 100 / range;
+
+      // 螺旋排布逻辑：让轨迹像生物一样向外生长
+      const angle = index * 0.5;
+      const radius = Math.sqrt(index) * spacing;
+      const xBase = currentX + Math.cos(angle) * radius;
+      const yBase = currentY + Math.sin(angle) * radius;
+
+      const pathData = points.map(p => 
+        `${(xBase + (p[1] - minLon) * scale).toFixed(2)},${(yBase + (maxLat - p[0]) * scale).toFixed(2)}`
+      ).join(' ');
+
+      // 颜色逻辑：越野绿、滑雪蓝、路跑红
+      let color = "#ff5a5f";
+      if (track.type.includes('Trail') || track.type.includes('Hike')) color = "#2ecc71";
+      if (track.type.includes('Ski')) color = "#00bfff";
+
+      return {
+        pathData,
+        // 热力效果：跑得越多的路，线条越粗，光效越强
+        strokeWidth: 1 + Math.log(track.count) * 2, 
+        opacity: 0.3 + Math.min(track.count * 0.2, 0.7),
+        color,
+        count: track.count
+      };
+    });
+  }, [processedTracks]);
 
   return (
-    /* 极致紧凑的网格：大屏每行显示 20 个，间距极小 */
-    <div className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-15 lg:grid-cols-20 gap-1">
-      {filtered.map((activity) => {
-        const points = polyline.decode(activity.summary_polyline);
-        if (!points.length) return null;
+    <div className="w-full bg-[#050505] rounded-3xl overflow-hidden shadow-inner p-4">
+      <svg viewBox="0 0 1000 1000" className="w-full h-auto filter drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">
+        {/* 绘制轨迹间的“逻辑神经元”连接线 */}
+        {renderedPaths.map((path, i) => i > 0 && (
+          <line 
+            key={`line-${i}`}
+            x1={renderedPaths[i-1].pathData.split(',')[0]} 
+            y1={renderedPaths[i-1].pathData.split(',')[1]}
+            x2={path.pathData.split(',')[0]} 
+            y2={path.pathData.split(',')[1]}
+            stroke="white" 
+            strokeWidth="0.2" 
+            opacity="0.1" 
+          />
+        ))}
         
-        const lats = points.map(p => p[0]);
-        const lons = points.map(p => p[1]);
-        const minLat = Math.min(...lats);
-        const maxLat = Math.max(...lats);
-        const minLon = Math.min(...lons);
-        const maxLon = Math.max(...lons);
-        
-        const latRange = maxLat - minLat;
-        const lonRange = maxLon - minLon;
-        // 关键：防止除以 0，并计算缩放比例使轨迹占据方块 90% 的空间
-        const maxRange = Math.max(latRange, lonRange) || 0.0001;
-        const scale = 90 / maxRange;
-        
-        // 计算居中偏移量
-        const xOffset = (100 - lonRange * scale) / 2;
-        const yOffset = (100 - latRange * scale) / 2;
-
-        const path = points.map(p => 
-          `${(xOffset + (p[1] - minLon) * scale).toFixed(2)},${(yOffset + (maxLat - p[0]) * scale).toFixed(2)}`
-        ).join(' ');
-        
-        // 针对你的运动习惯进行着色：
-        // 1. 越野跑 (占你 2025 年运动的 72%) 用鲜艳的绿色
-        // 2. 滑雪 (42 天记录) 用天蓝色
-        // 3. 普通跑步用经典的橙红色
-        let color = "#ff5a5f"; 
-        if (activity.type.includes('Trail') || activity.type.includes('Hike')) color = "#2ecc71";
-        if (activity.type.includes('Ski')) color = "#00bfff";
-
-        return (
-          <div 
-            key={activity.run_id} 
-            className="aspect-square bg-[#121212] flex items-center justify-center overflow-hidden rounded-sm hover:bg-gray-800 transition-all group relative"
-            title={`${activity.name} - ${(activity.distance / 1000).toFixed(2)}km`}
-          >
-            <svg viewBox="0 0 100 100" className="w-full h-full p-1">
-              <polyline 
-                points={path} 
-                fill="none" 
-                stroke={color} 
-                strokeWidth="2" 
-                strokeLinejoin="round" 
-                strokeLinecap="round" 
-              />
-            </svg>
-            {/* 悬停时显示公里数，增加互动感 */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity">
-               <span className="text-[7px] text-white font-mono">{(activity.distance / 1000).toFixed(0)}K</span>
-            </div>
-          </div>
-        );
-      })}
+        {/* 绘制主轨迹 */}
+        {renderedPaths.map((p, i) => (
+          <polyline
+            key={i}
+            points={p.pathData}
+            fill="none"
+            stroke={p.color}
+            strokeWidth={p.strokeWidth}
+            opacity={p.opacity}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            style={{ mixBlendMode: 'screen' }} // 叠加处产生“发光热力”效果
+          />
+        ))}
+      </svg>
     </div>
   );
 };
