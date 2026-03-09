@@ -144,56 +144,60 @@ const Index = () => {
     <Layout>
       <Helmet><html lang="en" data-theme={theme} /></Helmet>
       
-      {/* 顶部布局：标题和年份选择横跨整宽 */}
-      <div className="w-full">
-        <h1 className="my-8 mt-6 text-4xl font-extrabold italic text-center lg:text-left">
-          <a href={siteUrl}>{siteTitle}</a>
-        </h1>
-        
-        <div className="mb-10">
-          {(viewState.zoom ?? 0) <= 3 && IS_CHINESE ? (
-            <LocationStat 
-              changeYear={changeYear} 
-              changeCity={s => changeByItem(s, 'City', filterCityRuns)} 
-              changeTitle={s => changeByItem(s, 'Title', filterTitleRuns)} 
-            />
-          ) : (
+      {/* 顶部区域：标题和年份切换 */}
+      <div className="w-full space-y-8 mb-10">
+        <div className="flex flex-col md:flex-row justify-between items-center border-b pb-8">
+          <h1 className="text-4xl font-black italic tracking-tighter uppercase">
+            <a href={siteUrl}>{siteTitle}</a>
+          </h1>
+          <div className="mt-4 md:mt-0">
+             {/* 核心修改：年份选择现在横跨顶部 */}
             <YearsStat year={year} onClick={changeYear} />
-          )}
+          </div>
         </div>
       </div>
 
-      <div className="w-full" id="map-container">
-        {/* 海报展示墙：接收当前选中的 runs 数据 */}
-        <div className="bg-black p-6 rounded-2xl shadow-2xl mb-12 border border-gray-800">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-800 pb-6 gap-4">
+      {/* 中间核心：全宽足迹海报墙 */}
+      <div className="w-full mb-12" id="map-container">
+        <div className="bg-black p-8 rounded-3xl shadow-2xl border border-gray-800 transition-all overflow-hidden">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 border-b border-gray-800 pb-8 gap-6">
             <div>
-              <h2 className="text-4xl font-black italic text-white tracking-tighter uppercase leading-none">
+              <h2 className="text-5xl font-black italic text-white tracking-tighter uppercase leading-none">
                 {year} RUNNING POSTER
               </h2>
-              <p className="text-gray-500 font-mono text-xs mt-2 tracking-[0.3em] uppercase opacity-70">
+              <p className="text-gray-500 font-mono text-sm mt-3 tracking-[0.4em] uppercase opacity-60">
                 De-Geospatial Compact Trace Grid
               </p>
             </div>
             
-            <div className="flex space-x-8">
+            {/* 动态统计数据 */}
+            <div className="flex space-x-12">
               <div className="text-center">
-                <div className="text-white text-3xl font-bold font-mono leading-none">{runs.length}</div>
-                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1">Activities</div>
+                <div className="text-white text-4xl font-bold font-mono leading-none">{runs.length}</div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2">Activities</div>
               </div>
               <div className="text-center">
-                <div className="text-white text-3xl font-bold font-mono leading-none">
+                <div className="text-white text-4xl font-bold font-mono leading-none">
                   {Math.round(runs.reduce((acc, r) => acc + r.distance, 0) / 1000)}
                 </div>
-                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1">Total KM</div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2">Total KM</div>
+              </div>
+              {/* 特别为你添加的：总爬升展示（针对 2025 年那惊人的 8.9 万米） */}
+              <div className="text-center hidden sm:block">
+                <div className="text-green-400 text-4xl font-bold font-mono leading-none">
+                  {Math.round(runs.reduce((acc, r) => acc + (r.total_elevation_gain || 0), 0))}
+                </div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2">Gain (m)</div>
               </div>
             </div>
           </div>
           
+          {/* 足迹墙：现在它拥有全宽空间，会根据屏幕自动排布 */}
           <TrackWall activities={runs} />
         </div>
 
-        <div className="mt-12">
+        {/* 底部：详细表格 */}
+        <div className="mt-16">
           {year === 'Total' ? <SVGStat /> : (
             <RunTable 
               runs={runs} 
