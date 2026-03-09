@@ -154,7 +154,7 @@ const Index = () => {
       <div className="w-full lg:w-2/3" id="map-container">
         <RunMap title={title} viewState={viewState} geoData={animatedGeoData} setViewState={setViewState} changeYear={changeYear} thisYear={year} animationTrigger={animationTrigger} />
         {year === 'Total' ? <SVGStat /> : (
-          <RunTable runs={runs} locateActivity={locateActivity} setActivity={() => {}} runIndex={runIndex} setRunIndex={setRunIndex} />
+          <RunTable runs={runs} locateActivity={locateActivity} setActivity={() => { }} runIndex={runIndex} setRunIndex={setRunIndex} />
         )}
         <div className="mt-12 mb-8">
           <h2 className="text-2xl font-bold mb-6 italic text-red-500">我的全球足迹墙</h2>
