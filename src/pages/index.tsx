@@ -153,9 +153,22 @@ const Index = () => {
           <div className="w-full overflow-x-auto py-2 no-scrollbar">
             <YearsStat year={year} onClick={changeYear} />
           </div>
+>>>>>>> 02ccb705945e233ba84c19677a7ba58b3b6fd28a
         </div>
       </div>
 
+<<<<<<< HEAD
+      <div className="w-full mb-16" id="map-container">
+        <div className="bg-[#0a0a0a] p-8 rounded-[3rem] shadow-2xl border border-white/5 overflow-hidden">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-white/10 pb-8 gap-6">
+            <div className="space-y-2">
+              <h2 className="text-6xl font-black italic text-white tracking-tighter uppercase leading-none">
+                {year} <span className="text-red-600 font-outline-2">POSTER</span>
+              </h2>
+              <p className="text-gray-400 font-mono text-xs tracking-[0.6em] uppercase opacity-50">
+                Organic Tangency Trace Network
+              </p>
+=======
       <div className="w-full mb-16" id="map-container">
         {/* 有机足迹网格容器 */}
         <div className="bg-[#0a0a0a] p-8 rounded-[3rem] shadow-2xl border border-white/5 overflow-hidden">
@@ -167,13 +180,22 @@ const Index = () => {
               <p className="text-gray-400 font-mono text-xs tracking-[0.6em] uppercase opacity-50">
                 Organic Tangency Trace Network
               </p>
+>>>>>>> 02ccb705945e233ba84c19677a7ba58b3b6fd28a
             </div>
+<<<<<<< HEAD
+            
+            <div className="flex space-x-12">
+              <div className="text-center group">
+                <div className="text-white text-5xl font-black font-mono leading-none">{runs.length}</div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-3">Runs</div>
+=======
             
             {/* 统计数据：对应你 2025 年 1727 公里和 8.9 万米爬升的数据 */}
             <div className="flex space-x-12">
               <div className="text-center group">
                 <div className="text-white text-5xl font-black font-mono leading-none">{runs.length}</div>
                 <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-3">Runs</div>
+>>>>>>> 02ccb705945e233ba84c19677a7ba58b3b6fd28a
               </div>
               <div className="text-center group">
                 <div className="text-white text-5xl font-black font-mono leading-none">

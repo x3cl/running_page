@@ -30,7 +30,7 @@ export const TrackWall = ({ activities }: { activities: any[] }) => {
     const placedPoints: { x: number; y: number }[] = [];
     const results: any[] = [];
     const centerX = 1500, centerY = 1500;
-    const baseScale = 150; // 调大基础大小
+    const baseScale = 150;
 
     clusters.forEach((cluster) => {
       let foundPos = false;
@@ -41,12 +41,16 @@ export const TrackWall = ({ activities }: { activities: any[] }) => {
       while (!foundPos && radius < 2500) {
         const testX = centerX + radius * Math.cos(angle);
         const testY = centerY + radius * Math.sin(angle);
-        const range = Math.max(...cluster.points.map(p => p[0])) - Math.min(...cluster.points.map(p => p[0]));
-        const scale = baseScale / (range || 0.001);
+        
+        const lats = cluster.points.map(p => p[0]);
+        const lons = cluster.points.map(p => p[1]);
+        const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+        const minLon = Math.min(...lons);
+        const scale = baseScale / (Math.max(maxLat - minLat, Math.max(...lons) - minLon) || 0.001);
 
         const currentPoints = cluster.points.map(p => ({
-          x: testX + (p[1] - Math.min(...cluster.points.map(p => p[1]))) * scale,
-          y: testY + (Math.max(...cluster.points.map(p => p[0])) - p[0]) * scale
+          x: testX + (p[1] - minLon) * scale,
+          y: testY + (maxLat - p[0]) * scale
         }));
 
         if (placedPoints.length === 0) {
@@ -59,21 +63,20 @@ export const TrackWall = ({ activities }: { activities: any[] }) => {
               if (dist < minDistance) minDistance = dist;
             }
           }
-          // 增加安全边距：最小距离在 15-25 像素之间才停止，防止重叠
           if (minDistance >= 15 && minDistance <= 35) {
             foundPos = true;
             finalX = testX;
             finalY = testY;
           }
         }
-        angle += 0.2;
-        radius += 4; // 步进变大，减少计算量并拉开距离
+        angle += 0.25;
+        radius += 5;
       }
 
       const lats = cluster.rawPoints.map(p => p[0]), lons = cluster.rawPoints.map(p => p[1]);
       const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-      const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-      const scale = baseScale / (Math.max(maxLat - minLat, maxLon - minLon) || 0.001);
+      const minLon = Math.min(...lons);
+      const scale = baseScale / (Math.max(maxLat - minLat, Math.max(...lons) - minLon) || 0.001);
 
       const pathData = cluster.rawPoints.map(p => 
         `${(finalX + (p[1] - minLon) * scale).toFixed(2)},${(finalY + (maxLat - p[0]) * scale).toFixed(2)}`
@@ -82,19 +85,19 @@ export const TrackWall = ({ activities }: { activities: any[] }) => {
       const color = cluster.type.includes('Trail') ? "#2ecc71" : (cluster.type.includes('Ski') ? "#00bfff" : "#ff5a5f");
 
       results.push({ pathData, strokeWidth: 2 + Math.log(cluster.count) * 3, color });
-      // 记录点位用于下次避障
-      finalPoints = cluster.points.map(p => ({
+      
+      // 修复在这里：使用 const 声明变量
+      const currentFinalPoints = cluster.points.map(p => ({
         x: finalX + (p[1] - minLon) * scale,
         y: finalY + (maxLat - p[0]) * scale
       }));
-      placedPoints.push(...finalPoints);
+      placedPoints.push(...currentFinalPoints);
     });
     return results;
   }, [clusters]);
 
   return (
     <div className="relative w-full bg-[#050505] rounded-[40px] overflow-hidden shadow-2xl border border-white/5">
-      {/* 放大缩小图标按钮 */}
       <div className="absolute top-6 right-6 z-20 flex flex-col space-y-2">
         <button 
           onClick={() => setZoom(prev => Math.min(prev + 0.2, 3))}
@@ -110,7 +113,7 @@ export const TrackWall = ({ activities }: { activities: any[] }) => {
         </button>
       </div>
 
-      <div className="w-full h-auto overflow-auto cursor-grab active:cursor-grabbing" style={{ maxHeight: '80vh' }}>
+      <div className="w-full h-auto overflow-auto cursor-grab active:cursor-grabbing" style={{ maxHeight: '85vh' }}>
         <svg 
           viewBox="0 0 3000 3000" 
           className="w-full transition-transform duration-300 origin-center"
