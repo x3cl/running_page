@@ -140,56 +140,76 @@ const Index = () => {
 
   const { theme } = useTheme();
 
-  return (
-    <Layout>
-      <Helmet><html lang="en" data-theme={theme} /></Helmet>
-      <div className="w-full">
-        <h1 className="my-8 mt-6 text-4xl font-black italic tracking-tighter text-center lg:text-left uppercase">
+// 在 index.tsx 的 return 部分进行如下替换
+return (
+  <Layout>
+    <Helmet><html lang="en" data-theme={theme} /></Helmet>
+    
+    {/* 1. 全宽顶部年份导航 - 修复点击无效的问题 */}
+    <div className="w-full pt-6 pb-10">
+      <div className="flex flex-col items-center lg:items-start space-y-6">
+        <h1 className="text-4xl font-black italic tracking-tighter uppercase border-b-4 border-red-500 pb-2">
           <a href={siteUrl}>{siteTitle}</a>
         </h1>
-        <div className="mb-10 flex justify-center lg:justify-start overflow-x-auto pb-4">
+        
+        {/* 年份切换条 */}
+        <div className="w-full overflow-x-auto py-2 no-scrollbar">
           <YearsStat year={year} onClick={changeYear} />
         </div>
       </div>
-      <div className="w-full" id="map-container">
-        <div className="bg-black p-8 rounded-[40px] shadow-2xl mb-12 border border-white/5 relative overflow-hidden">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 border-b border-white/10 pb-8 gap-6 relative z-10">
-            <div>
-              <h2 className="text-5xl font-black italic text-white tracking-tighter uppercase leading-none">
-                {year} Organic Trace Web
-              </h2>
-              <p className="text-gray-500 font-mono text-[10px] mt-4 tracking-[0.5em] uppercase opacity-60">
-                Heatmap & Topological Connection
-              </p>
+    </div>
+
+    {/* 2. 足迹海报展示区 */}
+    <div className="w-full mb-16" id="map-container">
+      <div className="bg-[#0a0a0a] p-8 rounded-[3rem] shadow-2xl border border-white/5 overflow-hidden">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-white/10 pb-8 gap-6">
+          <div className="space-y-2">
+            <h2 className="text-6xl font-black italic text-white tracking-tighter uppercase leading-none">
+              {year} <span className="text-red-600 font-outline-2">POSTER</span>
+            </h2>
+            <p className="text-gray-400 font-mono text-xs tracking-[0.6em] uppercase opacity-50">
+              Organic Tangency Trace Network
+            </p>
+          </div>
+          
+          <div className="flex space-x-12">
+            <div className="text-center group">
+              <div className="text-white text-5xl font-black font-mono leading-none group-hover:scale-110 transition-transform">{runs.length}</div>
+              <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-3">Runs</div>
             </div>
-            <div className="flex space-x-12">
-              <div className="text-center">
-                <div className="text-white text-4xl font-bold font-mono">{runs.length}</div>
-                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2">Activities</div>
+            <div className="text-center group">
+              <div className="text-white text-5xl font-black font-mono leading-none group-hover:scale-110 transition-transform">
+                {Math.round(runs.reduce((acc, r) => acc + r.distance, 0) / 1000)}
               </div>
-              <div className="text-center">
-                <div className="text-white text-4xl font-bold font-mono">
-                  {Math.round(runs.reduce((acc, r) => acc + r.distance, 0) / 1000)}
-                </div>
-                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2">Total KM</div>
+              <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-3">Total KM</div>
+            </div>
+            <div className="text-center group hidden sm:block">
+              <div className="text-[#2ecc71] text-5xl font-black font-mono leading-none group-hover:scale-110 transition-transform">
+                {Math.round(runs.reduce((acc, r) => acc + (r.total_elevation_gain || 0), 0))}
               </div>
-              <div className="text-center hidden sm:block">
-                <div className="text-[#2ecc71] text-4xl font-bold font-mono">
-                  {Math.round(runs.reduce((acc, r) => acc + (r.total_elevation_gain || 0), 0))}
-                </div>
-                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2">Gain (m)</div>
-              </div>
+              <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-3">Elevation (m)</div>
             </div>
           </div>
-          <TrackWall activities={runs} />
         </div>
+        
+        {/* 这里传入过滤后的 runs 确保年份切换有效 */}
+        <TrackWall activities={runs} />
+      </div>
+
+      {/* 底部详情表 */}
+      <div className="mt-12">
         {year === 'Total' ? <SVGStat /> : (
-          <RunTable runs={runs} locateActivity={locateActivity} setActivity={() => { }} runIndex={runIndex} setRunIndex={setRunIndex} />
+          <RunTable 
+            runs={runs} 
+            locateActivity={locateActivity} 
+            setActivity={() => { }} 
+            runIndex={runIndex} 
+            setRunIndex={setRunIndex} 
+          />
         )}
       </div>
-      {import.meta.env.VERCEL && <Analytics />}
-    </Layout>
-  );
-};
-
-export default Index;
+    </div>
+    
+    {import.meta.env.VERCEL && <Analytics />}
+  </Layout>
+);

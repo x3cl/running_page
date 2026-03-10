@@ -1,137 +1,135 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import polyline from '@mapbox/polyline';
 
 export const TrackWall = ({ activities }: { activities: any[] }) => {
-  // 1. 处理数据：聚类并简化点
+  const [zoom, setZoom] = useState(1); // 缩放状态
+
   const clusters = useMemo(() => {
     const groups: any[] = [];
     activities.filter(a => a.summary_polyline).forEach(activity => {
       const pts = polyline.decode(activity.summary_polyline);
       if (pts.length < 5) return;
-
-      // 简单聚类：起点坐标相同则认为重合
       const finger = `${pts[0][0].toFixed(3)},${pts[0][1].toFixed(3)}`;
       const existing = groups.find(g => g.finger === finger);
-      
       if (existing) {
         existing.count += 1;
-        existing.activities.push(activity);
       } else {
         groups.push({
           finger,
-          points: pts.filter((_, i) => i % 5 === 0), // 抽样以提高碰撞检测速度
+          points: pts.filter((_, i) => i % 5 === 0), 
           rawPoints: pts,
           count: 1,
-          type: activity.type,
-          activities: [activity]
+          type: activity.type
         });
       }
     });
     return groups;
   }, [activities]);
 
-  // 2. 核心布局：线条相切算法
   const layout = useMemo(() => {
     const placedPoints: { x: number; y: number }[] = [];
     const results: any[] = [];
-    const centerX = 1000, centerY = 1000;
+    const centerX = 1500, centerY = 1500;
+    const baseScale = 150; // 调大基础大小
 
-    clusters.forEach((cluster, index) => {
+    clusters.forEach((cluster) => {
       let foundPos = false;
       let angle = 0;
       let radius = 0;
-      let finalX = centerX;
-      let finalY = centerY;
+      let finalX = centerX, finalY = centerY;
 
-      // 螺旋线搜索
-      while (!foundPos && radius < 1500) {
+      while (!foundPos && radius < 2500) {
         const testX = centerX + radius * Math.cos(angle);
         const testY = centerY + radius * Math.sin(angle);
+        const range = Math.max(...cluster.points.map(p => p[0])) - Math.min(...cluster.points.map(p => p[0]));
+        const scale = baseScale / (range || 0.001);
 
-        // 归一化当前轨迹点到测试位置
-        const lats = cluster.points.map(p => p[0]), lons = cluster.points.map(p => p[1]);
-        const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-        const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-        const scale = 120 / (Math.max(maxLat - minLat, maxLon - minLon) || 0.001);
-
-        const currentNormalizedPoints = cluster.points.map(p => ({
-          x: testX + (p[1] - minLon) * scale,
-          y: testY + (maxLat - p[0]) * scale
+        const currentPoints = cluster.points.map(p => ({
+          x: testX + (p[1] - Math.min(...cluster.points.map(p => p[1]))) * scale,
+          y: testY + (Math.max(...cluster.points.map(p => p[0])) - p[0]) * scale
         }));
 
-        // 检查与已放置点的最小距离（线条相切校验）
         if (placedPoints.length === 0) {
           foundPos = true;
         } else {
-          // 寻找最近点距离
           let minDistance = Infinity;
-          for (const p1 of currentNormalizedPoints) {
+          for (const p1 of currentPoints) {
             for (const p2 of placedPoints) {
               const dist = Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2);
               if (dist < minDistance) minDistance = dist;
             }
           }
-          
-          // 阈值设为 3 像素，达到即认为“线条相切”
-          if (minDistance >= 2 && minDistance <= 8) {
+          // 增加安全边距：最小距离在 15-25 像素之间才停止，防止重叠
+          if (minDistance >= 15 && minDistance <= 35) {
             foundPos = true;
             finalX = testX;
             finalY = testY;
           }
         }
-
-        angle += 0.3;
-        radius += 1.5;
+        angle += 0.2;
+        radius += 4; // 步进变大，减少计算量并拉开距离
       }
 
-      // 固定位置并记录点
-      const lats = cluster.points.map(p => p[0]), lons = cluster.points.map(p => p[1]);
+      const lats = cluster.rawPoints.map(p => p[0]), lons = cluster.rawPoints.map(p => p[1]);
       const minLat = Math.min(...lats), maxLat = Math.max(...lats);
       const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-      const scale = 120 / (Math.max(maxLat - minLat, maxLon - minLon) || 0.001);
-
-      const finalPoints = cluster.points.map(p => ({
-        x: finalX + (p[1] - minLon) * scale,
-        y: finalY + (maxLat - p[0]) * scale
-      }));
-      placedPoints.push(...finalPoints.filter((_, i) => i % 2 === 0));
+      const scale = baseScale / (Math.max(maxLat - minLat, maxLon - minLon) || 0.001);
 
       const pathData = cluster.rawPoints.map(p => 
         `${(finalX + (p[1] - minLon) * scale).toFixed(2)},${(finalY + (maxLat - p[0]) * scale).toFixed(2)}`
       ).join(' ');
 
-      let color = "#ff5a5f"; 
-      if (cluster.type.includes('Trail')) color = "#2ecc71"; // 72% 越野占比
-      if (cluster.type.includes('Ski')) color = "#00bfff"; // 42 天滑雪记录
+      const color = cluster.type.includes('Trail') ? "#2ecc71" : (cluster.type.includes('Ski') ? "#00bfff" : "#ff5a5f");
 
-      results.push({
-        pathData,
-        strokeWidth: 1.5 + Math.log(cluster.count) * 3, // 重合热力
-        opacity: 0.6,
-        color
-      });
+      results.push({ pathData, strokeWidth: 2 + Math.log(cluster.count) * 3, color });
+      // 记录点位用于下次避障
+      finalPoints = cluster.points.map(p => ({
+        x: finalX + (p[1] - minLon) * scale,
+        y: finalY + (maxLat - p[0]) * scale
+      }));
+      placedPoints.push(...finalPoints);
     });
-
     return results;
   }, [clusters]);
 
   return (
-    <div className="w-full bg-[#050505] rounded-[40px] overflow-hidden p-2 shadow-2xl">
-      <svg viewBox="0 0 2000 2000" className="w-full h-auto">
-        {layout.map((p, i) => (
-          <polyline 
-            key={i} 
-            points={p.pathData} 
-            fill="none" 
-            stroke={p.color} 
-            strokeWidth={p.strokeWidth} 
-            opacity={p.opacity} 
-            strokeLinejoin="round" 
-            strokeLinecap="round" 
-            style={{ mixBlendMode: 'screen' }} 
-          />
-        ))}
-      </svg>
+    <div className="relative w-full bg-[#050505] rounded-[40px] overflow-hidden shadow-2xl border border-white/5">
+      {/* 放大缩小图标按钮 */}
+      <div className="absolute top-6 right-6 z-20 flex flex-col space-y-2">
+        <button 
+          onClick={() => setZoom(prev => Math.min(prev + 0.2, 3))}
+          className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10 transition-all"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+        </button>
+        <button 
+          onClick={() => setZoom(prev => Math.max(prev - 0.2, 0.5))}
+          className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10 transition-all"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>
+        </button>
+      </div>
+
+      <div className="w-full h-auto overflow-auto cursor-grab active:cursor-grabbing" style={{ maxHeight: '80vh' }}>
+        <svg 
+          viewBox="0 0 3000 3000" 
+          className="w-full transition-transform duration-300 origin-center"
+          style={{ transform: `scale(${zoom})`, width: '100%' }}
+        >
+          {layout.map((p, i) => (
+            <polyline 
+              key={i} 
+              points={p.pathData} 
+              fill="none" 
+              stroke={p.color} 
+              strokeWidth={p.strokeWidth} 
+              strokeLinejoin="round" 
+              strokeLinecap="round" 
+              style={{ mixBlendMode: 'screen' }} 
+            />
+          ))}
+        </svg>
+      </div>
     </div>
   );
 };
