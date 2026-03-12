@@ -1,189 +1,207 @@
-import React, { useMemo, useState } from 'react';
-import polyline from '@mapbox/polyline';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { Analytics } from '@vercel/analytics/react';
+import { Helmet } from 'react-helmet-async';
+import Layout from '@/components/Layout';
+import LocationStat from '@/components/LocationStat';
+import RunMap from '@/components/RunMap';
+import RunTable from '@/components/RunTable';
+import SVGStat from '@/components/SVGStat';
+import YearsStat from '@/components/YearsStat';
+import { TrackWall } from '../components/TrackWall';
+import useActivities from '@/hooks/useActivities';
+import useSiteMetadata from '@/hooks/useSiteMetadata';
+import { useInterval } from '@/hooks/useInterval';
+import { IS_CHINESE } from '@/utils/const';
+import {
+  Activity,
+  IViewState,
+  filterAndSortRuns,
+  filterCityRuns,
+  filterTitleRuns,
+  filterYearRuns,
+  geoJsonForRuns,
+  getBoundsForGeoData,
+  scrollToMap,
+  sortDateFunc,
+  titleForShow,
+  RunIds,
+} from '@/utils/utils';
+import { useTheme, useThemeChangeCounter } from '@/hooks/useTheme';
 
-export const TrackWall = ({ activities }: { activities: any[] }) => {
-  const [zoom, setZoom] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+const Index = () => {
+  const { siteTitle, siteUrl } = useSiteMetadata();
+  const { activities, thisYear } = useActivities();
+  const themeChangeCounter = useThemeChangeCounter();
+  const [year, setYear] = useState(thisYear);
+  const [runIndex, setRunIndex] = useState(-1);
+  const [title, setTitle] = useState('');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0);
+  const [animationRuns, setAnimationRuns] = useState<Activity[]>([]);
+  const [currentFilter, setCurrentFilter] = useState<{
+    item: string;
+    func: (_run: Activity, _value: string) => boolean;
+  }>({ item: thisYear, func: filterYearRuns });
 
-  // 1. 轨迹预处理
-  const clusters = useMemo(() => {
-    const groups: any[] = [];
-    const validActivities = activities.filter(a => a.summary_polyline);
+  const [singleRunId, setSingleRunId] = useState<number | null>(null);
+  const [animationTrigger, setAnimationTrigger] = useState(0);
 
-    validActivities.forEach(activity => {
-      const pts = polyline.decode(activity.summary_polyline);
-      if (pts.length < 5) return;
-      
-      const start = `${pts[0][0].toFixed(3)},${pts[0][1].toFixed(3)}`;
-      const end = `${pts[pts.length-1][0].toFixed(3)},${pts[pts.length-1][1].toFixed(3)}`;
-      const distanceKey = Math.round(activity.distance / 500);
-      const clusterKey = `${start}-${end}-${distanceKey}`;
-
-      const existing = groups.find(g => g.key === clusterKey);
-      if (existing) {
-        existing.count += 1;
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash && hash.startsWith('run_')) {
+      const runId = parseInt(hash.replace('run_', ''), 10);
+      if (!isNaN(runId)) setSingleRunId(runId);
+    }
+    const handleHashChange = () => {
+      const newHash = window.location.hash.replace('#', '');
+      if (newHash && newHash.startsWith('run_')) {
+        const runId = parseInt(newHash.replace('run_', ''), 10);
+        if (!isNaN(runId)) setSingleRunId(runId);
       } else {
-        groups.push({
-          key: clusterKey,
-          points: pts.filter((_, i) => i % 10 === 0),
-          rawPoints: pts,
-          count: 1,
-          type: activity.type
-        });
+        setSingleRunId(null);
       }
-    });
-    return groups.sort((a, b) => b.rawPoints.length - a.rawPoints.length);
-  }, [activities]);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
-  const getActivityColor = (type: string) => {
-    const t = type.toLowerCase();
-    if (t.includes('trail')) return "#2ecc71"; 
-    if (t.includes('ski') || t.includes('snowboard')) return "#00bfff"; 
-    if (t.includes('cycling') || t.includes('ride')) return "#f1c40f"; 
-    if (t.includes('swim')) return "#1abc9c"; 
-    if (t.includes('hike') || t.includes('walk')) return "#e67e22"; 
-    return "#ff5a5f"; 
-  };
+  const runs = useMemo(() => filterAndSortRuns(activities, currentFilter.item, currentFilter.func, sortDateFunc), [activities, currentFilter.item, currentFilter.func]);
+  const geoData = useMemo(() => geoJsonForRuns(runs), [runs, themeChangeCounter]);
+  const bounds = useMemo(() => getBoundsForGeoData(geoData), [geoData]);
+  const [viewState, setViewState] = useState<IViewState>(() => ({ ...bounds }));
+  const [animatedGeoData, setAnimatedGeoData] = useState(geoData);
 
-  // 2. 核心布局逻辑：螺旋轨道放置算法
-  const layout = useMemo(() => {
-    const results: any[] = [];
-    const occupiedPoints: { x: number; y: number }[] = []; // 用于快速距离检测
-    
-    const centerX = 5000, centerY = 5000;
-    const baseScale = 140; 
-    
-    // 螺旋参数
-    let currentTheta = 0; 
-    let currentRadius = 120; // 微调：起始半径稍微加大
+  useInterval(() => {
+    if (!isAnimating || currentAnimationIndex >= animationRuns.length) {
+      setIsAnimating(false);
+      setAnimatedGeoData(geoData);
+      return;
+    }
+    const nextIndex = Math.min(currentAnimationIndex + Math.ceil(animationRuns.length / 8), animationRuns.length);
+    setAnimatedGeoData(geoJsonForRuns(animationRuns.slice(0, nextIndex)));
+    setCurrentAnimationIndex(nextIndex);
+  }, isAnimating ? 300 : null);
 
-    clusters.forEach((cluster, idx) => {
-      const lats = cluster.rawPoints.map(p => p[0]), lons = cluster.rawPoints.map(p => p[1]);
-      const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-      const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-      const midLat = (minLat + maxLat) / 2;
-      const midLon = (minLon + maxLon) / 2;
-      const scale = baseScale / (Math.max(maxLat - minLat, maxLon - minLon) || 0.001);
+  const startAnimation = useCallback((runsToAnimate: Activity[]) => {
+    if (runsToAnimate.length === 0) {
+      setAnimatedGeoData(geoData);
+      return;
+    }
+    setAnimationRuns(runsToAnimate);
+    setCurrentAnimationIndex(Math.ceil(runsToAnimate.length / 8));
+    setIsAnimating(true);
+  }, [geoData]);
 
-      let found = false;
-      let attempts = 0;
+  const changeByItem = useCallback((item: string, name: string, func: any) => {
+    scrollToMap();
+    if (name !== 'Year') setYear(thisYear);
+    setCurrentFilter({ item, func });
+    setRunIndex(-1);
+    setTitle(`${item} ${name} Running Heatmap`);
+    setSingleRunId(null);
+  }, [thisYear]);
 
-      // 轨迹内部变换函数
-      const getTransformed = (lat: number, lon: number, ox: number, oy: number, rot: number) => {
-        const px = (lon - midLon) * scale;
-        const py = (midLat - lat) * scale;
-        return {
-          x: ox + (px * Math.cos(rot) - py * Math.sin(rot)),
-          y: oy + (px * Math.sin(rot) + py * Math.cos(rot))
-        };
-      };
+  const changeYear = useCallback((y: string) => {
+    setYear(y);
+    if ((viewState.zoom ?? 0) > 3 && bounds) setViewState({ ...bounds });
+    changeByItem(y, 'Year', filterYearRuns);
+    setIsAnimating(false);
+  }, [viewState.zoom, bounds, changeByItem]);
 
-      // 寻找位置：沿着螺旋线不断步进直到找到空位
-      while (!found && attempts < 200) {
-        // 计算当前螺旋轨道上的目标点
-        const targetX = centerX + currentRadius * Math.cos(currentTheta);
-        const targetY = centerY + currentRadius * Math.sin(currentTheta);
-        
-        // 强制切向旋转：角度 = 极角 + 90度
-        const rotation = currentTheta + Math.PI / 2;
+  const locateActivity = useCallback((runIds: RunIds) => {
+    const ids = new Set(runIds);
+    const selectedRuns = !runIds.length ? runs : runs.filter((r) => ids.has(r.run_id));
+    if (!selectedRuns.length) return;
+    const lastRun = [...selectedRuns].sort(sortDateFunc)[0];
+    if (runIds.length === 1) {
+      setRunIndex(runs.findIndex((r) => r.run_id === runIds[0]));
+      setSingleRunId(runIds[0]);
+      setAnimationTrigger(t => t + 1);
+    } else {
+      setRunIndex(-1);
+      setSingleRunId(null);
+    }
+    const selectedGeoData = geoJsonForRuns(selectedRuns);
+    setAnimatedGeoData(selectedGeoData);
+    setViewState({ ...getBoundsForGeoData(selectedGeoData) });
+    setTitle(titleForShow(lastRun));
+    scrollToMap();
+  }, [runs]);
 
-        // 优化1：采样检测点从 5 个增加到 11 个，全覆盖
-        const checkPoints = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1].map(pct => {
-          const p = cluster.points[Math.floor(pct * (cluster.points.length - 1))];
-          return getTransformed(p[0], p[1], targetX, targetY, rotation);
-        });
+  useEffect(() => {
+    if (singleRunId === null) {
+      setViewState((prev) => ({ ...prev, ...bounds }));
+      startAnimation(runs);
+    }
+  }, [bounds, runs, singleRunId, startAnimation]);
 
-        // 优化2：碰撞检测距离阈值增加从 15 提高到 22，留出呼吸感
-        const hasCollision = occupiedPoints.some(op => 
-          checkPoints.some(cp => Math.sqrt((cp.x - op.x)**2 + (cp.y - op.y)**2) < 22) 
-        );
-
-        if (!hasCollision) {
-          // 放置成功
-          const pathData = cluster.rawPoints.map(p => {
-            const pt = getTransformed(p[0], p[1], targetX, targetY, rotation);
-            return `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`;
-          }).join(' ');
-
-          results.push({
-            pathData,
-            strokeWidth: 1.2 + Math.min(Math.log(cluster.count + 1) * 2, 6),
-            color: getActivityColor(cluster.type),
-            opacity: 0.85
-          });
-
-          // 将新的采样点加入占用列表
-          const newOccupied = cluster.points.filter((_, i) => i % 3 === 0).map(p => 
-            getTransformed(p[0], p[1], targetX, targetY, rotation)
-          );
-          occupiedPoints.push(...newOccupied);
-          
-          found = true;
-          // 放置后，稍微增加轨道半径和角度，为下一条做准备
-          currentTheta += 0.15; 
-          currentRadius += 1.0; // 微调：半径开度稍微加大
-        } else {
-          // 如果碰撞，沿着轨道走一小步再试
-          currentTheta += 0.1;
-          currentRadius += 0.3; // 微调：碰撞后外扩幅度加大
-          attempts++;
-        }
-      }
-    });
-
-    return results;
-  }, [clusters]);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-  };
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  };
+  const { theme } = useTheme();
 
   return (
-    <div className="flex justify-center items-center w-full min-h-screen bg-[#020202] overflow-hidden">
-      <div 
-        className="relative w-screen h-screen cursor-grab active:cursor-grabbing"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={() => setIsDragging(false)}
-        onMouseLeave={() => setIsDragging(false)}
-      >
-        <div 
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          style={{ 
-            transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})`,
-            transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0.2, 1)'
-          }}
-        >
-          <svg viewBox="0 0 10000 10000" className="w-[10000px] h-[10000px] overflow-visible">
-            {layout.map((p, i) => (
-              <polyline 
-                key={i} 
-                points={p.pathData} 
-                fill="none" 
-                stroke={p.color} 
-                strokeWidth={p.strokeWidth} 
-                strokeOpacity={p.opacity}
-                strokeLinejoin="round" 
-                strokeLinecap="round" 
-                style={{ mixBlendMode: 'screen' }} 
-              />
-            ))}
-          </svg>
-        </div>
-
-        <div className="fixed bottom-12 right-12 z-50 flex flex-col space-y-4">
-          <button onClick={() => setZoom(z => z * 1.4)} className="w-14 h-14 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 text-white shadow-2xl backdrop-blur-md transition-all active:scale-95 flex items-center justify-center">＋</button>
-          <button onClick={() => setZoom(z => z * 0.7)} className="w-14 h-14 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 text-white shadow-2xl backdrop-blur-md transition-all active:scale-95 flex items-center justify-center">－</button>
-          <button onClick={() => {setOffset({x:0,y:0}); setZoom(1)}} className="px-6 h-14 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 text-white shadow-2xl backdrop-blur-md text-xs font-bold tracking-widest">RESET</button>
+    <Layout>
+      <Helmet><html lang="en" data-theme={theme} /></Helmet>
+      
+      <div className="w-full pt-6 mb-10">
+        <div className="flex flex-col items-center lg:items-start space-y-6">
+          <h1 className="text-4xl font-black italic tracking-tighter uppercase border-b-4 border-red-500 pb-2">
+            <a href={siteUrl}>{siteTitle}</a>
+          </h1>
+          <div className="w-full overflow-x-auto py-2 no-scrollbar">
+            <YearsStat year={year} onClick={changeYear} />
+          </div>
         </div>
       </div>
-    </div>
+
+      <div className="w-full mb-16" id="map-container">
+        <div className="bg-[#0a0a0a] p-8 rounded-[3rem] shadow-2xl border border-white/5 overflow-hidden relative">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-white/10 pb-8 gap-6 relative z-10">
+            <div className="space-y-2">
+              <h2 className="text-6xl font-black italic text-white tracking-tighter uppercase leading-none">
+                {year} <span className="text-red-600 font-outline-2">POSTER</span>
+              </h2>
+              <p className="text-gray-400 font-mono text-xs tracking-[0.6em] uppercase opacity-50">
+                Organic Tangency Trace Network
+              </p>
+            </div>
+            
+            <div className="flex space-x-12">
+              <div className="text-center group">
+                <div className="text-white text-5xl font-black font-mono leading-none">{runs.length}</div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-3">Runs</div>
+              </div>
+              <div className="text-center group">
+                <div className="text-white text-5xl font-black font-mono leading-none">
+                  {Math.round(runs.reduce((acc, r) => acc + r.distance, 0) / 1000)}
+                </div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-3">Total KM</div>
+              </div>
+              <div className="text-center group hidden sm:block">
+                <div className="text-[#2ecc71] text-5xl font-black font-mono leading-none">
+                  {Math.round(runs.reduce((acc, r) => acc + (r.total_elevation_gain || 0), 0))}
+                </div>
+                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-3">Elevation (m)</div>
+              </div>
+            </div>
+          </div>
+          
+          <TrackWall activities={runs} />
+        </div>
+
+        <div className="mt-12">
+          {year === 'Total' ? <SVGStat /> : (
+            <RunTable 
+              runs={runs} 
+              locateActivity={locateActivity} 
+              setActivity={() => { }} 
+              runIndex={runIndex} 
+              setRunIndex={setRunIndex} 
+            />
+          )}
+        </div>
+      </div>
+      {import.meta.env.VERCEL && <Analytics />}
+    </Layout>
   );
 };
+
+export default Index;
