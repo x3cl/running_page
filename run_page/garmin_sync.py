@@ -59,9 +59,14 @@ class Garmin:
         if auth_domain and str(auth_domain).upper() == "CN":
             garth.configure(domain="garmin.cn", ssl_verify=False)
         self.modern_url = self.URL_DICT.get("MODERN_URL")
-        garth.client.loads(secret_string)
-        if garth.client.oauth2_token.expired:
-            garth.client.refresh_oauth2()
+        try:
+            # 尝试作为已有的 Session Token 加载
+            garth.client.loads(secret_string)
+        except Exception:
+            # 如果加载失败，说明传入的是原始 "账号:密码"，执行登录
+            print("Token 加载失败，尝试使用账号密码登录...")
+            email, password = secret_string.split(":")
+            garth.login(email, password)
 
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36",
