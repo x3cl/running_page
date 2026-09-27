@@ -241,6 +241,12 @@ class Track:
         if self.end_time is None:
             raise TrackLoadError("Track has no end time.")
         self.length = gpx.length_2d()
+        for t in gpx.tracks:
+            if self.track_name is None:
+                self.track_name = t.name
+            if hasattr(t, "type") and t.type:
+                self.type = "Run" if t.type == "running" else t.type
+
         moving_time = 0
         for t in gpx.tracks:
             for s in t.segments:
@@ -252,10 +258,6 @@ class Track:
         polyline_container = []
         heart_rate_list = []
         for t in gpx.tracks:
-            if self.track_name is None:
-                self.track_name = t.name
-            if hasattr(t, "type") and t.type:
-                self.type = "Run" if t.type == "running" else t.type
             for s in t.segments:
                 try:
                     extensions = [
@@ -329,38 +331,38 @@ class Track:
                 for extension in gpx.extensions
             }
         )
-        self.length = (
-            self.length
-            if gpx_extensions.get("distance") is None
-            else float(gpx_extensions.get("distance"))
-        )
-        self.average_heartrate = (
-            self.average_heartrate
-            if gpx_extensions.get("average_hr") is None
-            else float(gpx_extensions.get("average_hr"))
-        )
-        self.moving_dict["average_speed"] = (
-            self.moving_dict["average_speed"]
-            if gpx_extensions.get("average_speed") is None
-            else float(gpx_extensions.get("average_speed"))
-        )
-        self.moving_dict["distance"] = (
-            self.moving_dict["distance"]
-            if gpx_extensions.get("distance") is None
-            else float(gpx_extensions.get("distance"))
-        )
 
-        self.moving_dict["moving_time"] = (
-            self.moving_dict["moving_time"]
-            if gpx_extensions.get("moving_time") is None
-            else datetime.timedelta(seconds=float(gpx_extensions.get("moving_time")))
-        )
+        def get_val(key, default=None):
+            val = gpx_extensions.get(key)
+            if val is not None and str(val).strip() != "":
+                try:
+                    return float(val)
+                except ValueError:
+                    return default
+            return default
 
-        self.moving_dict["elapsed_time"] = (
-            self.moving_dict["elapsed_time"]
-            if gpx_extensions.get("elapsed_time") is None
-            else datetime.timedelta(seconds=float(gpx_extensions.get("elapsed_time")))
-        )
+        dist = get_val("distance", 0.0)
+        hr = get_val("average_hr")
+        speed = get_val("average_speed", 0.0)
+        moving_s = get_val("moving_time")
+        elapsed_s = get_val("elapsed_time")
+
+        if dist is not None:
+            self.length = dist
+            self.moving_dict["distance"] = dist
+        if hr is not None:
+            self.average_heartrate = hr
+        if speed is not None:
+            self.moving_dict["average_speed"] = speed
+        if moving_s and moving_s > 0:
+            self.moving_dict["moving_time"] = datetime.timedelta(seconds=moving_s)
+        elif elapsed_s is not None:
+            self.moving_dict["moving_time"] = datetime.timedelta(seconds=elapsed_s)
+        elif moving_s is not None:
+            self.moving_dict["moving_time"] = datetime.timedelta(seconds=moving_s)
+
+        if elapsed_s is not None:
+            self.moving_dict["elapsed_time"] = datetime.timedelta(seconds=elapsed_s)
 
     def _load_fit_data(self, fit: dict):
         _polylines = []

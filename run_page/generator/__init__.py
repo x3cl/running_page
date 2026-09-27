@@ -5,7 +5,7 @@ import sys
 import arrow
 import stravalib
 from gpxtrackposter import track_loader
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from polyline_processor import filter_out
 
@@ -128,8 +128,15 @@ class Generator:
         self.session.commit()
 
     def load(self):
-        # if sub_type is not in the db, just add an empty string to it
-        query = self.session.query(Activity).filter(Activity.distance > 0.1)
+        query = self.session.query(Activity).filter(
+            or_(
+                Activity.distance > 0.1,
+                Activity.type.in_(["indoor_climbing", "bouldering", "rock_climbing", "mountaineering", "other"]),
+                Activity.name.like("%攀岩%"),
+                Activity.name.like("%抱石%"),
+                Activity.name.like("%Climb%"),
+            )
+        )
         if self.only_run:
             query = query.filter(Activity.type == "Run")
 
