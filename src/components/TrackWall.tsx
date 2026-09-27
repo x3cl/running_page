@@ -5,6 +5,16 @@ interface TrackWallProps {
   activities: any[];
 }
 
+const INDOOR_CLIMB_PATHS = [
+  "M2400 4045 l-236 -154 -627 52 -627 52 -21 -22 c-21 -21 -22 -33 -36 -510 -7 -268 -16 -524 -19 -568 l-5 -81 -245 -149 c-219 -134 -246 -154 -264 -190 -10 -22 -87 -190 -169 -374 l-151 -334 0 -602 c0 -577 1 -603 19 -619 10 -9 264 -118 564 -242 l545 -224 914 -40 c502 -22 932 -40 955 -40 41 0 52 8 392 308 l349 307 79 155 c43 85 112 211 152 279 l74 123 28 302 c27 289 29 325 29 878 l0 576 -249 438 c-137 241 -258 445 -270 452 -11 8 -31 12 -44 8 -13 -3 -95 -74 -181 -157 -86 -84 -161 -148 -165 -143 -4 5 -111 149 -236 319 -126 171 -237 320 -248 333 -12 12 -32 22 -46 22 -16 0 -113 -58 -261 -155z m502 -345 c136 -184 255 -338 264 -343 33 -19 71 8 219 154 l152 150 217 -382 216 -382 0 -561 c0 -529 -1 -577 -26 -841 l-27 -280 -74 -125 c-41 -69 -105 -186 -143 -261 l-69 -135 -320 -282 -320 -282 -917 40 -916 40 -514 212 -514 212 0 549 0 550 151 336 c84 185 156 341 161 347 5 7 121 80 258 164 187 115 251 159 259 179 5 14 12 141 15 281 10 428 16 631 22 725 l6 90 556 -47 c306 -26 578 -47 604 -48 44 0 61 9 260 140 117 77 217 138 223 137 5 -2 121 -154 257 -337z",
+  "M1094 3542 c-38 -25 -40 -94 -7 -212 20 -75 47 -124 95 -175 53 -58 110 -85 179 -85 151 1 271 146 293 357 7 62 -2 98 -28 115 -6 4 -126 8 -266 8 -140 0 -260 -4 -266 -8z m421 -154 c-19 -97 -94 -188 -155 -188 -61 0 -134 88 -155 188 l-7 32 162 0 162 0 -7 -32z",
+  "M1953 3152 c-207 -74 -269 -320 -122 -486 79 -90 229 -118 342 -63 69 34 130 102 153 169 24 73 16 182 -19 239 -75 128 -225 187 -354 141z m184 -143 c68 -42 94 -150 52 -218 -61 -100 -178 -114 -260 -32 -83 83 -56 211 56 263 48 22 102 17 152 -13z",
+  "M2702 2975 c-23 -7 -57 -24 -75 -38 -18 -14 -120 -144 -227 -291 l-195 -265 -205 -1 -204 0 -83 -84 -83 -84 -100 128 c-105 136 -139 162 -226 176 -146 23 -293 -124 -269 -269 11 -65 31 -96 217 -337 126 -164 184 -231 213 -247 58 -32 140 -48 192 -36 l43 10 0 -82 c0 -80 -3 -89 -147 -486 -130 -360 -146 -411 -147 -469 0 -78 24 -131 84 -182 107 -92 279 -68 351 48 15 25 319 806 319 821 0 1 15 3 33 3 19 0 93 26 171 60 76 34 139 60 141 58 1 -2 19 -97 39 -211 20 -114 42 -221 50 -236 19 -35 73 -88 111 -108 44 -24 143 -28 188 -10 93 39 157 127 157 215 0 38 -109 710 -126 778 -9 37 -80 110 -127 133 -66 32 -147 28 -237 -10 -40 -17 -74 -28 -77 -25 -3 3 108 159 247 348 139 188 259 358 267 377 53 126 -26 282 -162 320 -51 14 -79 13 -133 -4z m118 -130 c41 -21 60 -53 60 -100 0 -37 -21 -69 -265 -400 l-265 -359 0 -98 c0 -89 2 -98 22 -112 33 -23 45 -21 173 34 64 28 131 50 148 50 38 0 93 -31 101 -57 19 -62 127 -732 122 -758 -18 -97 -161 -112 -201 -22 -8 18 -32 140 -54 272 -35 204 -44 243 -62 258 -12 9 -30 17 -40 17 -10 0 -96 -34 -191 -75 -134 -59 -183 -75 -220 -75 -35 0 -53 -6 -71 -22 -17 -16 -71 -145 -181 -438 -88 -232 -166 -424 -178 -437 -17 -18 -32 -23 -74 -23 -46 0 -55 4 -78 31 -18 21 -26 42 -26 67 0 22 58 197 145 440 l145 403 0 166 c0 141 -3 169 -17 185 -23 26 -62 22 -130 -13 -55 -28 -62 -30 -105 -19 -26 7 -57 23 -70 38 -59 65 -331 428 -338 451 -18 68 34 136 105 136 55 0 61 -6 200 -186 63 -81 122 -148 132 -151 34 -9 59 9 149 106 l89 96 206 0 c183 0 209 2 227 18 11 9 109 138 217 285 228 310 251 330 325 292z",
+  "M382 1914 c-19 -13 -22 -24 -22 -77 0 -157 83 -313 194 -367 92 -44 209 -19 280 60 93 103 149 327 96 380 -19 19 -33 20 -273 20 -212 0 -256 -2 -275 -16z m428 -132 c0 -42 -35 -117 -75 -158 -36 -38 -47 -44 -82 -44 -31 0 -48 7 -72 29 -31 29 -73 109 -85 164 l-6 27 160 0 c148 0 160 -1 160 -18z",
+  "M3260 1850 c-24 -24 -25 -68 -6 -161 38 -179 157 -299 296 -299 159 0 282 147 305 363 6 54 4 65 -15 90 l-21 27 -270 0 c-256 0 -270 -1 -289 -20z m460 -125 c0 -8 -8 -37 -19 -64 -34 -91 -89 -141 -153 -141 -65 0 -141 87 -163 188 l-7 32 171 0 c145 0 171 -2 171 -15z",
+  "M837 1212 c-33 -37 -14 -180 38 -287 29 -60 92 -127 143 -151 20 -10 61 -20 89 -22 159 -14 303 173 303 392 0 88 6 86 -297 86 -239 0 -261 -1 -276 -18z m437 -139 c-35 -148 -132 -226 -214 -171 -36 25 -85 109 -96 166 l-6 32 161 0 161 0 -6 -27z",
+];
+
 export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -400,296 +410,240 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                 );
               }
 
-              // 2. 室内抱石 (Indoor Bouldering)：立体折面大挂件 + 发光抱石岩点 + 爆发折线路线
+              // 2. 室内抱石 (Indoor Bouldering)：极简粗线条拟物风（防落保护垫 + 矮岩石轮廓 + 几何大造型 + D型岩点 + 抱石姿态）
               if (item.category === 'indoor_bouldering') {
                 return (
                   <g
                     key={`boulder-${item.id}-${i}`}
-                    transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation}) scale(1.1)`}
+                    transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation}) scale(0.44)`}
                     className="pointer-events-auto climb-node-hover"
                     onMouseEnter={() => setHoveredItem(item)}
                   >
-                    {/* 立体几何大挂件 (Faceted 3D Bouldering Volume) */}
-                    <polygon
-                      points="-65,-45 25,-65 75,-10 40,55 -55,65 -75,10"
-                      fill="rgba(255,204,0,0.08)"
-                      stroke="#ffcc00"
-                      strokeWidth="2"
-                      strokeDasharray="6 3"
-                    />
-                    <polygon
-                      points="-65,-45 25,-65 10,-5 -55,10"
-                      fill="rgba(255,204,0,0.18)"
-                      stroke="#ffcc00"
-                      strokeWidth="1.2"
-                    />
-                    <polygon
-                      points="25,-65 75,-10 30,12 10,-5"
-                      fill="rgba(255,204,0,0.26)"
-                      stroke="#ffcc00"
-                      strokeWidth="1.2"
-                    />
-                    <polygon
-                      points="-55,10 10,-5 30,12 40,55 -55,65"
-                      fill="rgba(255,204,0,0.14)"
-                      stroke="#ffcc00"
-                      strokeWidth="1.2"
-                    />
-
-                    {/* 彩色抱石岩点 (Bouldering Holds) */}
-                    <circle cx="-48" cy="48" r="6" fill="#39ff14" filter="url(#glow)" />
-                    <circle cx="-38" cy="52" r="4.5" fill="#39ff14" />
-                    <circle cx="-16" cy="22" r="7" fill="#00ffff" filter="url(#glow)" />
-                    <circle cx="16" cy="-18" r="6" fill="#ff00ff" filter="url(#glow)" />
-                    {/* 完攀 Top 点 */}
-                    <polygon
-                      points="12,-48 28,-44 24,-56 10,-54"
-                      fill="#ff3131"
-                      filter="url(#intense-glow)"
-                    />
-
-                    {/* 抱石路线粉线 */}
-                    <path
-                      d="M-42,48 Q-22,38 -16,22 T16,-18 Q20,-38 18,-50"
-                      fill="none"
-                      stroke="#ffea00"
-                      strokeWidth="2.8"
-                      strokeDasharray="5 2.5"
-                      filter="url(#glow)"
-                    />
-
-                    {/* 标志性文字标签 */}
-                    <text
-                      x="0"
-                      y="85"
-                      textAnchor="middle"
-                      fill="#ffcc00"
-                      fontSize="14"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                      letterSpacing="3"
-                    >
-                      BOULDERING
-                    </text>
+                    <g transform="translate(-200, -200)">
+                      {/* 矮岩石/大屋檐外轮廓背景 (Boulder Silhouette) */}
+                      <polygon
+                        points="50,110 180,45 320,70 370,160 340,300 65,300 30,210"
+                        fill="rgba(255,204,0,0.06)"
+                        stroke="#ffcc00"
+                        strokeWidth="14"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                      {/* 抱石防落保护垫 (Crash Pad) */}
+                      <rect
+                        x="80"
+                        y="335"
+                        width="240"
+                        height="40"
+                        rx="10"
+                        fill="none"
+                        stroke="#ffcc00"
+                        strokeWidth="14"
+                        strokeLinejoin="round"
+                      />
+                      <line
+                        x1="200"
+                        y1="335"
+                        x2="200"
+                        y2="375"
+                        stroke="#ffcc00"
+                        strokeWidth="10"
+                        strokeLinecap="round"
+                      />
+                      {/* 几何大造型挂件 (Big Volume Hold) */}
+                      <polygon
+                        points="260,95 320,120 280,165"
+                        fill="none"
+                        stroke="#ffcc00"
+                        strokeWidth="14"
+                        strokeLinejoin="round"
+                      />
+                      {/* D型经典抱石岩点 (D-shaped Holds) */}
+                      <path
+                        d="M 80 170 L 130 170 A 25 25 0 0 1 80 170 Z"
+                        fill="none"
+                        stroke="#ffcc00"
+                        strokeWidth="14"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M 100 250 L 150 250 A 25 25 0 0 1 100 250 Z"
+                        fill="none"
+                        stroke="#ffcc00"
+                        strokeWidth="14"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                      {/* 攀爬者头部 (Climber Head) */}
+                      <circle
+                        cx="195"
+                        cy="130"
+                        r="24"
+                        fill="none"
+                        stroke="#ffcc00"
+                        strokeWidth="14"
+                      />
+                      {/* 攀爬者动态发力身躯 (Climber Body Outline: Heel hook & Compression) */}
+                      <path
+                        d="M 185 160 L 130 160 L 105 170 A 12 12 0 0 0 115 190 L 140 180 L 165 185 L 165 210 L 135 250 A 12 12 0 0 0 155 265 L 185 225 L 205 225 L 260 215 L 295 195 A 12 12 0 0 0 290 175 L 255 195 L 215 205 L 215 185 L 255 155 L 275 140 A 12 12 0 0 0 265 120 L 235 145 L 205 160 Z"
+                        fill="none"
+                        stroke="#ffcc00"
+                        strokeWidth="14"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                      <text
+                        x="200"
+                        y="415"
+                        textAnchor="middle"
+                        fill="#ffcc00"
+                        fontSize="24"
+                        fontFamily="monospace"
+                        fontWeight="bold"
+                        letterSpacing="4"
+                      >
+                        BOULDERING
+                      </text>
+                    </g>
                   </g>
                 );
               }
 
-              // 3. 室内攀岩 (Indoor Climbing)：高耸垂直分段几何板面 + 垂直路线 + 快挂与双环保护站
+              // 3. 室内攀岩 (Indoor Climbing)：严格按照参考图风格（高耸折角岩壁 + 攀岩小人中空轮廓 + D型岩点）
               if (item.category === 'indoor_climbing') {
                 return (
                   <g
                     key={`indoor-climb-${item.id}-${i}`}
-                    transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation}) scale(1.1)`}
+                    transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation}) scale(0.44)`}
                     className="pointer-events-auto climb-node-hover"
                     onMouseEnter={() => setHoveredItem(item)}
                   >
-                    {/* 高耸分段几何岩壁板面 (High Wall Faceted Panels) */}
-                    <polygon
-                      points="-45,85 45,85 55,0 25,-85 -30,-85 -50,0"
-                      fill="rgba(255,106,0,0.08)"
-                      stroke="#ff6a00"
-                      strokeWidth="1.8"
-                    />
-                    <line
-                      x1="-50"
-                      y1="0"
-                      x2="55"
-                      y2="0"
-                      stroke="#ff6a00"
-                      strokeWidth="1.2"
-                      strokeDasharray="4 3"
-                      opacity="0.6"
-                    />
-                    <line
-                      x1="-22"
-                      y1="85"
-                      x2="0"
-                      y2="0"
-                      stroke="#ff6a00"
-                      strokeWidth="0.9"
-                      opacity="0.5"
-                    />
-                    <line
-                      x1="0"
-                      y1="0"
-                      x2="5"
-                      y2="-85"
-                      stroke="#ff6a00"
-                      strokeWidth="0.9"
-                      opacity="0.5"
-                    />
-
-                    {/* 攀岩主线 (Ascending Route) */}
-                    <path
-                      d="M-16,80 Q-26,42 6,12 Q28,-22 0,-72"
-                      fill="none"
-                      stroke="#ff7700"
-                      strokeWidth="2.8"
-                      filter="url(#glow)"
-                    />
-
-                    {/* 快挂 (Quickdraws) */}
-                    <circle cx="-16" cy="74" r="4" fill="#ffffff" />
-                    <line x1="-22" y1="44" x2="-12" y2="40" stroke="#ffaa00" strokeWidth="2.4" />
-                    <circle cx="6" cy="12" r="4" fill="#ffffff" />
-                    <line x1="16" y1="-20" x2="26" y2="-24" stroke="#ffaa00" strokeWidth="2.4" />
-
-                    {/* 保护站双环锚链 (Double Ring Anchor) */}
-                    <circle
-                      cx="-7"
-                      cy="-75"
-                      r="5"
-                      fill="none"
-                      stroke="#ffe600"
-                      strokeWidth="2.2"
-                      filter="url(#glow)"
-                    />
-                    <circle
-                      cx="7"
-                      cy="-75"
-                      r="5"
-                      fill="none"
-                      stroke="#ffe600"
-                      strokeWidth="2.2"
-                      filter="url(#glow)"
-                    />
-                    <line x1="-2" y1="-75" x2="2" y2="-75" stroke="#ffe600" strokeWidth="2.2" />
-
-                    <text
-                      x="0"
-                      y="105"
-                      textAnchor="middle"
-                      fill="#ff7700"
-                      fontSize="14"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                      letterSpacing="3"
-                    >
-                      INDOOR CLIMB
-                    </text>
+                    <g transform="translate(-205, -210)">
+                      <polygon
+                        points="95,30 215,40 255,20 325,75 385,125 375,300 320,385 110,380 30,335 25,230 75,160 80,70"
+                        fill="rgba(255,106,0,0.06)"
+                      />
+                      <g transform="translate(0, 420) scale(0.1, -0.1)" fill="#ff6a00" stroke="none">
+                        {INDOOR_CLIMB_PATHS.map((p, pIdx) => (
+                          <path key={`icp-${pIdx}`} d={p} />
+                        ))}
+                      </g>
+                      <text
+                        x="205"
+                        y="425"
+                        textAnchor="middle"
+                        fill="#ff6a00"
+                        fontSize="24"
+                        fontFamily="monospace"
+                        fontWeight="bold"
+                        letterSpacing="4"
+                      >
+                        INDOOR CLIMB
+                      </text>
+                    </g>
                   </g>
                 );
               }
 
-              // 4. 室外野攀 (Outdoor Climbing Topo)：天然悬崖轮廓 + 经典 Topo 点划线 + 攀登小人剪影！
+              // 4. 室外野攀 (Outdoor Climbing Topo)：同一矢量风格（天然悬崖轮廓 + 双环锚链保护站 + Topo虚线路线 + 攀爬身躯）
               if (item.category === 'outdoor_climbing') {
                 return (
                   <g
                     key={`outdoor-climb-${item.id}-${i}`}
-                    transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation}) scale(1.15)`}
+                    transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation}) scale(0.44)`}
                     className="pointer-events-auto climb-node-hover"
                     onMouseEnter={() => setHoveredItem(item)}
                   >
-                    {/* 天然悬崖断崖轮廓 (Crag Cliff Face & Cracks) */}
-                    <path
-                      d="M-85,85 L-68,42 L-90,0 L-58,-42 L-74,-85 L-10,-95 L45,-90 L80,-52 L62,0 L90,48 L74,85 Z"
-                      fill="rgba(0,229,255,0.06)"
-                      stroke="#00e5ff"
-                      strokeWidth="2"
-                    />
-                    {/* 岩石裂隙线 (Rock Crack Lines) */}
-                    <path
-                      d="M-32,85 L-22,42 L-38,12 L-12,-20 L-26,-62 L-10,-95"
-                      fill="none"
-                      stroke="#00e5ff"
-                      strokeWidth="1.2"
-                      strokeDasharray="4 4"
-                      opacity="0.45"
-                    />
-                    <path
-                      d="M26,62 L42,22 L22,-32 L48,-72"
-                      fill="none"
-                      stroke="#00e5ff"
-                      strokeWidth="1"
-                      strokeDasharray="3 3"
-                      opacity="0.35"
-                    />
-
-                    {/* 经典 Topo 点划线路线 (Dashed Topo Route Line) */}
-                    <path
-                      d="M0,80 Q16,42 -6,6 Q-22,-32 10,-78"
-                      fill="none"
-                      stroke="#ff2d55"
-                      strokeWidth="3.2"
-                      strokeDasharray="8 4"
-                      filter="url(#intense-glow)"
-                    />
-
-                    {/* Topo 挂片点 (Bolt Hangers) */}
-                    <circle cx="8" cy="50" r="4" fill="none" stroke="#ff2d55" strokeWidth="2" />
-                    <circle cx="-6" cy="6" r="4" fill="none" stroke="#ff2d55" strokeWidth="2" />
-                    <circle cx="-14" cy="-36" r="4" fill="none" stroke="#ff2d55" strokeWidth="2" />
-
-                    {/* 保护站双环锚链 */}
-                    <rect x="5" y="-87" width="12" height="4.5" rx="2" fill="#ff2d55" filter="url(#glow)" />
-                    <circle cx="7" cy="-80" r="3.5" fill="none" stroke="#ff2d55" strokeWidth="1.8" />
-                    <circle cx="15" cy="-80" r="3.5" fill="none" stroke="#ff2d55" strokeWidth="1.8" />
-
-                    {/* 🧗‍♂️ 经典攀登小人剪影 (Climber Scaling the Crag!) */}
-                    <g transform="translate(-6, 2) scale(1)">
-                      {/* 头盔 */}
-                      <circle cx="0" cy="-15" r="4" fill="#ffffff" filter="url(#glow)" />
-                      {/* 躯干 */}
-                      <line x1="0" y1="-11" x2="-2" y2="3" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" />
-                      {/* 右手高抓点 */}
-                      <path
-                        d="M0,-9 L9,-14 L12,-20"
-                        fill="none"
-                        stroke="#ffffff"
-                        strokeWidth="2.4"
-                        strokeLinecap="round"
+                    <g transform="translate(-200, -200)">
+                      {/* 天然悬崖断崖轮廓 (Natural Mountain Crag Face) */}
+                      <polygon
+                        points="50,130 110,60 170,95 240,30 330,75 375,170 355,330 290,380 90,380 30,290 35,190"
+                        fill="rgba(0,229,255,0.06)"
+                        stroke="#00e5ff"
+                        strokeWidth="14"
                         strokeLinejoin="round"
-                      />
-                      {/* 左手侧抓点 */}
-                      <path
-                        d="M0,-9 L-9,-7 L-12,-12"
-                        fill="none"
-                        stroke="#ffffff"
-                        strokeWidth="2.4"
                         strokeLinecap="round"
-                        strokeLinejoin="round"
                       />
-                      {/* 左腿高脚蹬岩点 */}
+                      {/* 天然岩石裂隙线 (Natural Rock Crack Line) */}
                       <path
-                        d="M-2,3 L-9,8 L-7,17"
+                        d="M 100 135 L 85 210 L 105 275 L 80 345"
                         fill="none"
-                        stroke="#ffffff"
-                        strokeWidth="2.6"
+                        stroke="#00e5ff"
+                        strokeWidth="8"
+                        strokeDasharray="10 10"
                         strokeLinecap="round"
-                        strokeLinejoin="round"
+                        opacity="0.75"
                       />
-                      {/* 右腿支撑踩点 */}
-                      <path
-                        d="M-2,3 L5,10 L7,19"
+                      {/* 顶端双环保护站 (Summit Double Ring Anchor Station) */}
+                      <circle
+                        cx="248"
+                        cy="65"
+                        r="12"
                         fill="none"
-                        stroke="#ffffff"
-                        strokeWidth="2.6"
+                        stroke="#00e5ff"
+                        strokeWidth="10"
+                      />
+                      <circle
+                        cx="278"
+                        cy="65"
+                        r="12"
+                        fill="none"
+                        stroke="#00e5ff"
+                        strokeWidth="10"
+                      />
+                      <line
+                        x1="258"
+                        y1="65"
+                        x2="268"
+                        y2="65"
+                        stroke="#00e5ff"
+                        strokeWidth="10"
                         strokeLinecap="round"
-                        strokeLinejoin="round"
                       />
-                      {/* 保护绳 */}
+                      {/* Topo 攀登路线虚线 (Ascending Topo Route Line) */}
                       <path
-                        d="M-2,3 Q-6,20 2,42"
+                        d="M 140 370 Q 170 280 200 230 T 263 77"
                         fill="none"
-                        stroke="#ff2d55"
-                        strokeWidth="1.4"
-                        opacity="0.85"
+                        stroke="#00e5ff"
+                        strokeWidth="8"
+                        strokeDasharray="12 8"
+                        strokeLinecap="round"
                       />
+                      {/* 挂片保护点 (Bolt Hangers) */}
+                      <circle cx="165" cy="305" r="8" fill="#00e5ff" />
+                      <circle cx="225" cy="170" r="8" fill="#00e5ff" />
+                      {/* 攀爬者头部 (Climber Head) */}
+                      <circle
+                        cx="210"
+                        cy="180"
+                        r="22"
+                        fill="none"
+                        stroke="#00e5ff"
+                        strokeWidth="14"
+                      />
+                      {/* 攀爬者动态身躯 (Climber Body Scaling the Crag) */}
+                      <path
+                        d="M 195 210 L 155 215 L 135 235 A 12 12 0 0 0 152 250 L 168 235 L 185 235 L 185 260 L 165 315 A 12 12 0 0 0 188 325 L 205 275 L 220 275 L 245 270 L 265 305 A 12 12 0 0 0 285 295 L 265 255 L 235 250 L 230 235 L 255 210 L 270 175 A 12 12 0 0 0 250 162 L 235 195 L 215 210 Z"
+                        fill="none"
+                        stroke="#00e5ff"
+                        strokeWidth="14"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                      <text
+                        x="200"
+                        y="415"
+                        textAnchor="middle"
+                        fill="#00e5ff"
+                        fontSize="24"
+                        fontFamily="monospace"
+                        fontWeight="bold"
+                        letterSpacing="4"
+                      >
+                        CRAG TOPO
+                      </text>
                     </g>
-
-                    <text
-                      x="0"
-                      y="108"
-                      textAnchor="middle"
-                      fill="#00e5ff"
-                      fontSize="14"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                      letterSpacing="3"
-                    >
-                      CRAG TOPO
-                    </text>
                   </g>
                 );
               }
