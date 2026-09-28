@@ -448,196 +448,39 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                 </g>
               ) : null;
 
-              // 2. 室内抱石 (Indoor Bouldering)：精致小石头晶体（抱石垫 + 切面晶体 + 几何大造型挂件 + 抱石身躯）
-              if (item.category === 'indoor_bouldering') {
+              // 2. 攀岩活动统一小人节点（去掉外框与背景，统一攀爬小人icon，以不同颜色代表抱石、室内与室外）
+              if (
+                item.category === 'indoor_bouldering' ||
+                item.category === 'indoor_climbing' ||
+                item.category === 'outdoor_climbing'
+              ) {
                 return (
-                  <React.Fragment key={`boulder-frag-${item.id}-${i}`}>
+                  <React.Fragment key={`climb-frag-${item.id}-${i}`}>
                     {connectorsJsx}
                     <g
-                      key={`boulder-${item.id}-${i}`}
+                      key={`climb-figure-${item.id}-${i}`}
                       transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation})`}
                       className="pointer-events-auto climb-pebble-node"
                       onMouseEnter={() => setHoveredItem(item)}
                     >
                       <g className="pebble-body" filter="url(#glow)">
-                        {/* 抱石小石头晶石轮廓 (Boulder Pebble token) */}
-                        <polygon
-                          points="-19,-7 -8,-18 10,-17 20,-6 16,13 -7,18 -19,8"
-                          fill="rgba(255, 204, 0, 0.22)"
-                          stroke="#ffcc00"
-                          strokeWidth="1.8"
-                          strokeLinejoin="round"
-                        />
-                        {/* 石头立体切面 (Faceted cut lines) */}
-                        <path
-                          d="M-8,-18 L1,1 L16,13 M1,1 L-19,8 M1,1 L20,-6 M-8,-18 L-19,-7"
-                          stroke="#fff066"
-                          strokeWidth="0.8"
-                          opacity="0.5"
-                        />
-                        {/* 底部微缩防落垫 (Mini Crash Pad) */}
-                        <rect
-                          x="-8"
-                          y="9"
-                          width="16"
-                          height="3"
-                          rx="1"
-                          fill="none"
-                          stroke="#ffcc00"
-                          strokeWidth="0.9"
-                        />
-                        <line
-                          x1="0"
-                          y1="9"
-                          x2="0"
-                          y2="12"
-                          stroke="#ffcc00"
-                          strokeWidth="0.8"
-                        />
-                        {/* 抱石姿态小人 (Mini Climber) */}
+                        {/* 攀爬小人头部 (Climber Head) */}
                         <circle
                           cx="0"
-                          cy="-4.5"
-                          r="2.2"
-                          fill="none"
-                          stroke="#ffffff"
-                          strokeWidth="1"
+                          cy="-9"
+                          r="3.5"
+                          fill={`${item.color}22`}
+                          stroke={item.color}
+                          strokeWidth="2"
                         />
+                        {/* 攀爬小人身躯与四肢 (Dynamic Climber Body Silhouette) */}
                         <path
-                          d="M0,-2 L0,2.5 L-4,5 M0,2.5 L4,2 L8,0 M0,-0.5 L-5,-1.5 M0,-0.5 L5,-3.5"
-                          stroke="#ffffff"
-                          strokeWidth="1.1"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        {/* 微缩大造型挂件 (Mini Volume) */}
-                        <polygon points="5,-6 9,-4 7,-1" fill="#fff066" opacity="0.9" />
-                      </g>
-                    </g>
-                  </React.Fragment>
-                );
-              }
-
-              // 3. 室内攀岩 (Indoor Climbing)：精致小石头晶体（高壁晶石 + D型岩点 + 向上抓握蹬壁姿态）
-              if (item.category === 'indoor_climbing') {
-                return (
-                  <React.Fragment key={`indoor-climb-frag-${item.id}-${i}`}>
-                    {connectorsJsx}
-                    <g
-                      key={`indoor-climb-${item.id}-${i}`}
-                      transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation})`}
-                      className="pointer-events-auto climb-pebble-node"
-                      onMouseEnter={() => setHoveredItem(item)}
-                    >
-                      <g className="pebble-body" filter="url(#glow)">
-                        {/* 高壁小石头晶石轮廓 (Indoor Wall Pebble token) */}
-                        <polygon
-                          points="-18,-11 -4,-18 14,-14 20,2 14,16 -6,19 -19,10 -21,-2"
-                          fill="rgba(255, 106, 0, 0.22)"
-                          stroke="#ff6a00"
+                          d="M-2,-5 L-7,-7 L-11,-4 A 2.2 2.2 0 0 0 -9,-1 L-6,-3 L-2,-2 L-2,2 L-8,8 A 2.2 2.2 0 0 0 -6,11 L-1,6 L2,6 L7,10 A 2.2 2.2 0 0 0 10,8 L6,3 L3,2 L3,-2 L7,-7 L9,-11 A 2.2 2.2 0 0 0 6,-12 L4,-8 L1,-5 Z"
+                          fill={`${item.color}22`}
+                          stroke={item.color}
                           strokeWidth="1.8"
                           strokeLinejoin="round"
-                        />
-                        {/* 石头立体切面 (Faceted cut lines) */}
-                        <path
-                          d="M-4,-18 L1,0 L14,16 M1,0 L20,2 M1,0 L-19,10 M-4,-18 L-21,-2"
-                          stroke="#ffaa55"
-                          strokeWidth="0.8"
-                          opacity="0.5"
-                        />
-                        {/* 高壁攀岩姿态小人 (Mini Climber Scaling Wall) */}
-                        <circle
-                          cx="0"
-                          cy="-5.5"
-                          r="2.2"
-                          fill="none"
-                          stroke="#ffffff"
-                          strokeWidth="1"
-                        />
-                        <path
-                          d="M0,-3 L0,3 L-4,8 M0,3 L4,7 M0,-1 L-5,-3 M0,-1 L4,-4"
-                          stroke="#ffffff"
-                          strokeWidth="1.1"
                           strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        {/* 经典 D 型小岩点 */}
-                        <path d="M-9,-4 Q-6,-2 -9,0 Z" fill="#ffaa55" />
-                        <path d="M7,-5 Q10,-3 7,-1 Z" fill="#ffaa55" />
-                      </g>
-                    </g>
-                  </React.Fragment>
-                );
-              }
-
-              // 4. 室外野攀 (Outdoor Climbing Topo)：精致小石头晶体（山峰断崖切面 + 顶端双环锚链 + Topo打点路线 + 攀登小人）
-              if (item.category === 'outdoor_climbing') {
-                return (
-                  <React.Fragment key={`outdoor-climb-frag-${item.id}-${i}`}>
-                    {connectorsJsx}
-                    <g
-                      key={`outdoor-climb-${item.id}-${i}`}
-                      transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation})`}
-                      className="pointer-events-auto climb-pebble-node"
-                      onMouseEnter={() => setHoveredItem(item)}
-                    >
-                      <g className="pebble-body" filter="url(#glow)">
-                        {/* 天然悬崖小石头晶石轮廓 (Mountain Crag Pebble token) */}
-                        <polygon
-                          points="-20,11 -17,-5 -7,-19 2,-11 11,-19 20,-5 16,15 -5,19"
-                          fill="rgba(0, 229, 255, 0.20)"
-                          stroke="#00e5ff"
-                          strokeWidth="1.8"
-                          strokeLinejoin="round"
-                        />
-                        {/* 石头切面裂隙 (Faceted cut & crack lines) */}
-                        <path
-                          d="M-7,-19 L1,2 L16,15 M1,2 L-17,-5 M1,2 L11,-19 M1,2 L-5,19"
-                          stroke="#80f5ff"
-                          strokeWidth="0.8"
-                          opacity="0.5"
-                        />
-                        {/* 顶端微缩双环保护站 (Mini Summit Twin Rings) */}
-                        <circle
-                          cx="4"
-                          cy="-12"
-                          r="1.5"
-                          fill="none"
-                          stroke="#ffffff"
-                          strokeWidth="0.8"
-                        />
-                        <circle
-                          cx="7.5"
-                          cy="-12"
-                          r="1.5"
-                          fill="none"
-                          stroke="#ffffff"
-                          strokeWidth="0.8"
-                        />
-                        {/* Topo 攀登路线打点虚线 */}
-                        <path
-                          d="M-5,11 L-2,4 L2,-3 L5,-10"
-                          fill="none"
-                          stroke="#ffffff"
-                          strokeWidth="0.8"
-                          strokeDasharray="1.5 1.5"
-                        />
-                        <circle cx="-0.5" cy="1" r="1.2" fill="#00e5ff" />
-                        {/* 攀爬小人 */}
-                        <circle
-                          cx="-2"
-                          cy="-4"
-                          r="1.8"
-                          fill="none"
-                          stroke="#ffffff"
-                          strokeWidth="0.8"
-                        />
-                        <path
-                          d="M-2,-2 L-2,3 L-5,6 M-2,3 L2,4 M-2,0 L-5,-1 M-2,0 L2,-3"
-                          stroke="#ffffff"
-                          strokeWidth="0.9"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
                         />
                       </g>
                     </g>
