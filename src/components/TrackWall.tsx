@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import polyline from '@mapbox/polyline';
 
 interface TrackWallProps {
@@ -128,76 +128,90 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
     return items;
   }, [activities]);
 
-  // 3. 有机切线旋转星系布局算法（微调版：容纳独立轨迹与三大攀岩专属节点）
+  // 3. 阿基米德螺旋星云不重叠首尾相接布局算法 (Archimedean Nebula Head-to-Tail Layout)
   const layout = useMemo(() => {
     const results: any[] = [];
+    const connectorLines: {
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      color: string;
+    }[] = [];
     const occupiedPoints: { x: number; y: number }[] = [];
-    const centerX = 5000,
-      centerY = 5000;
-    const baseScale = 140;
-    let currentTheta = 0;
-    let currentRadius = 130;
+    const centerX = 5000;
+    const centerY = 5000;
+    const baseScale = 110;
+    const r0 = 85;
+    const k_spiral = 28.0;
+    const GAP = 22.0;
+
+    let currentTheta = 0.2;
+    let prevExit: { x: number; y: number } | null = null;
+    let prevSFront = 0;
+    let maxRadius = r0;
 
     processedItems.forEach((item) => {
-      // 场景 A: 攀岩类型节点（小石头精致拟物，紧凑点缀并联系在轨迹之间）
+      // 场景 A: 攀岩活动（抱石、室内攀岩、室外攀岩）精致小人节点
       if (item.category !== 'gps_track') {
-        let found = false,
-          attempts = 0;
-        const nodeRadius = 24; // 精致小石头占用半径
+        const sBack = 15.0;
+        const sFront = 15.0;
 
-        while (!found && attempts < 200) {
-          const targetX = centerX + currentRadius * Math.cos(currentTheta);
-          const targetY = centerY + currentRadius * Math.sin(currentTheta);
-          const rotation = currentTheta + Math.PI / 2;
-
-          const hasCollision = occupiedPoints.some(
-            (op) =>
-              Math.sqrt((targetX - op.x) ** 2 + (targetY - op.y) ** 2) <
-              nodeRadius
-          );
-
-          if (!hasCollision) {
-            // 寻找 1~2 个邻近轨迹上的联结锚点（让小石头自然联系点缀在轨迹之间）
-            const connectors = occupiedPoints
-              .map((op) => ({
-                x: op.x,
-                y: op.y,
-                dist: Math.hypot(op.x - targetX, op.y - targetY),
-              }))
-              .filter((p) => p.dist >= 18 && p.dist <= 75)
-              .sort((a, b) => a.dist - b.dist)
-              .slice(0, 2);
-
-            results.push({
-              ...item,
-              x: targetX,
-              y: targetY,
-              rotation: (rotation * 180) / Math.PI,
-              connectors,
-            });
-
-            // 占位采样点（小石头约 36-40 像素）
-            for (let a = 0; a < Math.PI * 2; a += 1.2) {
-              occupiedPoints.push({
-                x: targetX + 16 * Math.cos(a),
-                y: targetY + 16 * Math.sin(a),
-              });
-            }
-            occupiedPoints.push({ x: targetX, y: targetY });
-
-            found = true;
-            currentTheta += 0.16;
-            currentRadius += 0.9;
-          } else {
-            currentTheta += 0.08;
-            currentRadius += 0.35;
-            attempts++;
-          }
+        // 根据前序节点的出点与当前节点的入点，按物理弧长步进角度，确保绝对不重叠
+        if (prevSFront > 0) {
+          const r = r0 + k_spiral * currentTheta;
+          currentTheta += (prevSFront + GAP + sBack) / r;
         }
+
+        // 安全碰撞检测：若异常情况下与内圈点云接近，则向前小步微调直到安全
+        let attempts = 0;
+        while (attempts < 50) {
+          const curR = r0 + k_spiral * currentTheta;
+          const tx = centerX + curR * Math.cos(currentTheta);
+          const ty = centerY + curR * Math.sin(currentTheta);
+
+          const col = occupiedPoints.some(
+            (op) => Math.hypot(tx - op.x, ty - op.y) < 18
+          );
+          if (!col) break;
+          currentTheta += 0.05;
+          attempts++;
+        }
+
+        const curRadius = r0 + k_spiral * currentTheta;
+        if (curRadius > maxRadius) maxRadius = curRadius;
+
+        const tx = centerX + curRadius * Math.cos(currentTheta);
+        const ty = centerY + curRadius * Math.sin(currentTheta);
+        const tangent = Math.atan2(
+          k_spiral * Math.sin(currentTheta) + curRadius * Math.cos(currentTheta),
+          k_spiral * Math.cos(currentTheta) - curRadius * Math.sin(currentTheta)
+        );
+
+        if (prevExit) {
+          connectorLines.push({
+            x1: prevExit.x,
+            y1: prevExit.y,
+            x2: tx,
+            y2: ty,
+            color: item.color,
+          });
+        }
+
+        results.push({
+          ...item,
+          x: tx,
+          y: ty,
+          rotation: (tangent * 180) / Math.PI,
+        });
+
+        occupiedPoints.push({ x: tx, y: ty });
+        prevExit = { x: tx, y: ty };
+        prevSFront = sFront;
         return;
       }
 
-      // 场景 B: 独立 GPS 轨迹（不合并）
+      // 场景 B: 独立 GPS 轨迹（跑步、骑行、徒步、越野跑等，不合并）
       const lats = item.rawPoints.map((p: number[]) => p[0]);
       const lons = item.rawPoints.map((p: number[]) => p[1]);
       const minLat = Math.min(...lats),
@@ -208,75 +222,162 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         midLon = (minLon + maxLon) / 2;
       const scale =
         baseScale / (Math.max(maxLat - minLat, maxLon - minLon) || 0.001);
-      let found = false,
-        attempts = 0;
 
-      const getTransformed = (
-        lat: number,
-        lon: number,
-        ox: number,
-        oy: number,
-        rot: number
-      ) => {
-        const px = (lon - midLon) * scale;
-        const py = (midLat - lat) * scale;
+      // 计算轨迹主轴方向（起点至离起点最远处的向量），使轨迹自然依附切线流向
+      const startPt = item.rawPoints[0];
+      let maxDistSq = 0;
+      let furthestPt = item.rawPoints[0];
+      for (let i = 0; i < item.rawPoints.length; i++) {
+        const p = item.rawPoints[i];
+        const distSq = (p[0] - startPt[0]) ** 2 + (p[1] - startPt[1]) ** 2;
+        if (distSq > maxDistSq) {
+          maxDistSq = distSq;
+          furthestPt = p;
+        }
+      }
+
+      const dx = (furthestPt[1] - startPt[1]) * scale;
+      const dy = -(furthestPt[0] - startPt[0]) * scale;
+      const trackAngle = Math.atan2(dy, dx);
+
+      // 预估当前切线与旋转
+      const estRadius = r0 + k_spiral * currentTheta;
+      const estTangent = Math.atan2(
+        k_spiral * Math.sin(currentTheta) + estRadius * Math.cos(currentTheta),
+        k_spiral * Math.cos(currentTheta) - estRadius * Math.sin(currentTheta)
+      );
+      const initialRot = estTangent - trackAngle;
+      const tCos = Math.cos(estTangent);
+      const tSin = Math.sin(estTangent);
+
+      // 计算本轨迹沿切线方向的跨度 [minProj, maxProj]
+      const relPts = item.rawPoints.map((p: number[]) => {
+        const px = (p[1] - midLon) * scale;
+        const py = (midLat - p[0]) * scale;
         return {
-          x: ox + (px * Math.cos(rot) - py * Math.sin(rot)),
-          y: oy + (px * Math.sin(rot) + py * Math.cos(rot)),
+          rx: px * Math.cos(initialRot) - py * Math.sin(initialRot),
+          ry: px * Math.sin(initialRot) + py * Math.cos(initialRot),
         };
-      };
+      });
 
-      while (!found && attempts < 200) {
-        const targetX = centerX + currentRadius * Math.cos(currentTheta);
-        const targetY = centerY + currentRadius * Math.sin(currentTheta);
-        const rotation = currentTheta + Math.PI / 2;
+      const projs = relPts.map((p: any) => p.rx * tCos + p.ry * tSin);
+      const minP = Math.min(...projs);
+      const maxP = Math.max(...projs);
+      const sBack = minP < 0 ? -minP : 0;
+      const sFront = maxP > 0 ? maxP : 0;
 
-        const checkPoints = [0, 0.2, 0.4, 0.6, 0.8, 1].map((pct) => {
-          const p = item.points[Math.floor(pct * (item.points.length - 1))];
-          return getTransformed(p[0], p[1], targetX, targetY, rotation);
+      // 沿螺旋弧长步进，确保本轨迹的后端与上一个活动的前端保持 GAP 呼吸距离
+      if (prevSFront > 0) {
+        currentTheta += (prevSFront + GAP + sBack) / estRadius;
+      }
+
+      // 安全碰撞检测：若由于极端复杂轨迹形状产生干涉，则小步向前探测直到完全无干涉
+      let attempts = 0;
+      let placed = false;
+      let finalTx = 0,
+        finalTy = 0;
+      let finalPtsTrans: { x: number; y: number }[] = [];
+
+      while (!placed && attempts < 50) {
+        const curR = r0 + k_spiral * currentTheta;
+        const curTangent = Math.atan2(
+          k_spiral * Math.sin(currentTheta) + curR * Math.cos(currentTheta),
+          k_spiral * Math.cos(currentTheta) - curR * Math.sin(currentTheta)
+        );
+        const finalRot = curTangent - trackAngle;
+        finalTx = centerX + curR * Math.cos(currentTheta);
+        finalTy = centerY + curR * Math.sin(currentTheta);
+
+        finalPtsTrans = item.rawPoints.map((p: number[]) => {
+          const px = (p[1] - midLon) * scale;
+          const py = (midLat - p[0]) * scale;
+          return {
+            x: finalTx + (px * Math.cos(finalRot) - py * Math.sin(finalRot)),
+            y: finalTy + (px * Math.sin(finalRot) + py * Math.cos(finalRot)),
+          };
         });
 
-        const hasCollision = occupiedPoints.some((op) =>
-          checkPoints.some(
-            (cp) => Math.sqrt((cp.x - op.x) ** 2 + (cp.y - op.y) ** 2) < 22
-          )
+        // 密集采样检测与前序所有活动点云的距离
+        const samplePts = finalPtsTrans.filter((_: any, i: number) => i % 3 === 0);
+        const col = occupiedPoints.some((op) =>
+          samplePts.some((sp) => Math.hypot(sp.x - op.x, sp.y - op.y) < 16)
         );
 
-        if (!hasCollision) {
-          const pathData = item.rawPoints
-            .map((p: number[]) => {
-              const pt = getTransformed(p[0], p[1], targetX, targetY, rotation);
-              return `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`;
-            })
-            .join(' ');
-
-          results.push({
-            ...item,
-            pathData,
-            strokeWidth: 2.2,
-            opacity: 0.92,
-          });
-
-          const newOccupied = item.points
-            .filter((_: any, i: number) => i % 3 === 0)
-            .map((p: number[]) =>
-              getTransformed(p[0], p[1], targetX, targetY, rotation)
-            );
-          occupiedPoints.push(...newOccupied);
-
-          found = true;
-          currentTheta += 0.16;
-          currentRadius += 1.2;
+        if (!col || attempts === 49) {
+          placed = true;
         } else {
-          currentTheta += 0.1;
-          currentRadius += 0.35;
+          currentTheta += 0.04;
           attempts++;
         }
       }
+
+      const placedRadius = r0 + k_spiral * currentTheta;
+      if (placedRadius > maxRadius) maxRadius = placedRadius;
+
+      // 计算本轨迹沿世界切线的进点 (entry) 与出点 (exit)
+      const curTangent = Math.atan2(
+        k_spiral * Math.sin(currentTheta) + placedRadius * Math.cos(currentTheta),
+        k_spiral * Math.cos(currentTheta) - placedRadius * Math.sin(currentTheta)
+      );
+      const worldCos = Math.cos(curTangent);
+      const worldSin = Math.sin(curTangent);
+
+      const worldProjs = finalPtsTrans.map(
+        (p) => (p.x - finalTx) * worldCos + (p.y - finalTy) * worldSin
+      );
+      let minProjIdx = 0,
+        maxProjIdx = 0;
+      for (let i = 1; i < worldProjs.length; i++) {
+        if (worldProjs[i] < worldProjs[minProjIdx]) minProjIdx = i;
+        if (worldProjs[i] > worldProjs[maxProjIdx]) maxProjIdx = i;
+      }
+
+      const entry = finalPtsTrans[minProjIdx];
+      const exitPt = finalPtsTrans[maxProjIdx];
+
+      // 首尾相接光丝
+      if (prevExit) {
+        connectorLines.push({
+          x1: prevExit.x,
+          y1: prevExit.y,
+          x2: entry.x,
+          y2: entry.y,
+          color: item.color,
+        });
+      }
+
+      const pathData = finalPtsTrans
+        .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+        .join(' ');
+
+      results.push({
+        ...item,
+        pathData,
+        strokeWidth: 2.2,
+        opacity: 0.92,
+      });
+
+      // 将轨迹点加入占用点云
+      finalPtsTrans.forEach((p, i) => {
+        if (i % 4 === 0) occupiedPoints.push(p);
+      });
+
+      prevExit = exitPt;
+      prevSFront = worldProjs[maxProjIdx];
     });
 
-    return results;
+    return { items: results, connectors: connectorLines, maxRadius };
   }, [processedItems]);
+
+  // 月份切换或数据变更时，自适应视口初识缩放并居中
+  useEffect(() => {
+    setOffset({ x: 0, y: 0 });
+    if (layout.maxRadius > 370) {
+      setZoom(Math.max(0.45, Math.min(1, 370 / layout.maxRadius)));
+    } else {
+      setZoom(1);
+    }
+  }, [layout.maxRadius]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -401,7 +502,32 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
               </filter>
             </defs>
 
-            {layout.map((item, i) => {
+            {/* 1. 星云首尾相接流光线 (Connective Stardust Threads) */}
+            <g className="pointer-events-none">
+              {layout.connectors.map((c, idx) => (
+                <g key={`nebula-conn-${idx}`}>
+                  <line
+                    x1={c.x1}
+                    y1={c.y1}
+                    x2={c.x2}
+                    y2={c.y2}
+                    stroke="rgba(255, 255, 255, 0.32)"
+                    strokeWidth={1.2}
+                    strokeDasharray="2 4"
+                  />
+                  <circle
+                    cx={c.x2}
+                    cy={c.y2}
+                    r={2.2}
+                    fill={c.color}
+                    opacity={0.85}
+                  />
+                </g>
+              ))}
+            </g>
+
+            {/* 2. 轨迹线与攀岩节点 */}
+            {layout.items.map((item, i) => {
               // 1. 常规独立 GPS 轨迹线
               if (item.category === 'gps_track') {
                 return (
@@ -421,33 +547,6 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                 );
               }
 
-              // 攀岩小石头与临近轨迹间的联系光丝 (Connectors)
-              const connectorsJsx = item.connectors && item.connectors.length > 0 ? (
-                <g key={`conns-${item.id}-${i}`} className="pointer-events-none">
-                  {item.connectors.map((c: any, cIdx: number) => (
-                    <g key={`c-${item.id}-${i}-${cIdx}`}>
-                      <line
-                        x1={item.x}
-                        y1={item.y}
-                        x2={c.x}
-                        y2={c.y}
-                        stroke={item.color}
-                        strokeWidth={1}
-                        strokeDasharray="3 3"
-                        strokeOpacity={0.5}
-                      />
-                      <circle
-                        cx={c.x}
-                        cy={c.y}
-                        r={1.8}
-                        fill={item.color}
-                        opacity={0.7}
-                      />
-                    </g>
-                  ))}
-                </g>
-              ) : null;
-
               // 2. 攀岩活动统一小人节点（去掉外框与背景，统一攀爬小人icon，以不同颜色代表抱石、室内与室外）
               if (
                 item.category === 'indoor_bouldering' ||
@@ -455,36 +554,33 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                 item.category === 'outdoor_climbing'
               ) {
                 return (
-                  <React.Fragment key={`climb-frag-${item.id}-${i}`}>
-                    {connectorsJsx}
-                    <g
-                      key={`climb-figure-${item.id}-${i}`}
-                      transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation})`}
-                      className="pointer-events-auto climb-pebble-node"
-                      onMouseEnter={() => setHoveredItem(item)}
-                    >
-                      <g className="pebble-body" filter="url(#glow)">
-                        {/* 攀爬小人头部 (Climber Head) */}
-                        <circle
-                          cx="0"
-                          cy="-9"
-                          r="3.5"
-                          fill={`${item.color}22`}
-                          stroke={item.color}
-                          strokeWidth="2"
-                        />
-                        {/* 攀爬小人身躯与四肢 (Dynamic Climber Body Silhouette) */}
-                        <path
-                          d="M-2,-5 L-7,-7 L-11,-4 A 2.2 2.2 0 0 0 -9,-1 L-6,-3 L-2,-2 L-2,2 L-8,8 A 2.2 2.2 0 0 0 -6,11 L-1,6 L2,6 L7,10 A 2.2 2.2 0 0 0 10,8 L6,3 L3,2 L3,-2 L7,-7 L9,-11 A 2.2 2.2 0 0 0 6,-12 L4,-8 L1,-5 Z"
-                          fill={`${item.color}22`}
-                          stroke={item.color}
-                          strokeWidth="1.8"
-                          strokeLinejoin="round"
-                          strokeLinecap="round"
-                        />
-                      </g>
+                  <g
+                    key={`climb-figure-${item.id}-${i}`}
+                    transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation})`}
+                    className="pointer-events-auto climb-pebble-node"
+                    onMouseEnter={() => setHoveredItem(item)}
+                  >
+                    <g className="pebble-body" filter="url(#glow)">
+                      {/* 攀爬小人头部 (Climber Head) */}
+                      <circle
+                        cx="0"
+                        cy="-9"
+                        r="3.5"
+                        fill={`${item.color}22`}
+                        stroke={item.color}
+                        strokeWidth="2"
+                      />
+                      {/* 攀爬小人身躯与四肢 (Dynamic Climber Body Silhouette) */}
+                      <path
+                        d="M-2,-5 L-7,-7 L-11,-4 A 2.2 2.2 0 0 0 -9,-1 L-6,-3 L-2,-2 L-2,2 L-8,8 A 2.2 2.2 0 0 0 -6,11 L-1,6 L2,6 L7,10 A 2.2 2.2 0 0 0 10,8 L6,3 L3,2 L3,-2 L7,-7 L9,-11 A 2.2 2.2 0 0 0 6,-12 L4,-8 L1,-5 Z"
+                        fill={`${item.color}22`}
+                        stroke={item.color}
+                        strokeWidth="1.8"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
                     </g>
-                  </React.Fragment>
+                  </g>
                 );
               }
 
@@ -597,7 +693,11 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
           <button
             onClick={() => {
               setOffset({ x: 0, y: 0 });
-              setZoom(1);
+              if (layout.maxRadius > 370) {
+                setZoom(Math.max(0.45, Math.min(1, 370 / layout.maxRadius)));
+              } else {
+                setZoom(1);
+              }
             }}
             className="px-4 h-10 bg-white/5 hover:bg-cyan-500/20 active:scale-95 rounded-2xl border border-white/10 text-cyan-400 shadow-2xl backdrop-blur-md text-[10px] font-bold tracking-widest uppercase transition-all"
             title="重置视角"
