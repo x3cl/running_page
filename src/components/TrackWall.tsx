@@ -141,10 +141,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
     const occupiedPoints: { x: number; y: number }[] = [];
     const centerX = 5000;
     const centerY = 5000;
-    const baseScale = 110;
-    const r0 = 85;
-    const k_spiral = 28.0;
-    const GAP = 22.0;
+    const baseScale = 96;
+    const r0 = 45;
+    const k_spiral = 13.5;
+    const GAP = 7.0;
 
     let currentTheta = 0.2;
     let prevExit: { x: number; y: number } | null = null;
@@ -154,10 +154,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
     processedItems.forEach((item) => {
       // 场景 A: 攀岩活动（抱石、室内攀岩、室外攀岩）精致小人节点
       if (item.category !== 'gps_track') {
-        const sBack = 15.0;
-        const sFront = 15.0;
+        const sBack = 12.0;
+        const sFront = 12.0;
 
-        // 根据前序节点的出点与当前节点的入点，按物理弧长步进角度，确保绝对不重叠
+        // 根据前序节点的出点与当前节点的入点，按物理弧长步进角度，确保紧密且绝对不重叠
         if (prevSFront > 0) {
           const r = r0 + k_spiral * currentTheta;
           currentTheta += (prevSFront + GAP + sBack) / r;
@@ -171,10 +171,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
           const ty = centerY + curR * Math.sin(currentTheta);
 
           const col = occupiedPoints.some(
-            (op) => Math.hypot(tx - op.x, ty - op.y) < 18
+            (op) => Math.hypot(tx - op.x, ty - op.y) < 14
           );
           if (!col) break;
-          currentTheta += 0.05;
+          currentTheta += 0.04;
           attempts++;
         }
 
@@ -300,7 +300,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         // 密集采样检测与前序所有活动点云的距离
         const samplePts = finalPtsTrans.filter((_: any, i: number) => i % 3 === 0);
         const col = occupiedPoints.some((op) =>
-          samplePts.some((sp) => Math.hypot(sp.x - op.x, sp.y - op.y) < 16)
+          samplePts.some((sp) => Math.hypot(sp.x - op.x, sp.y - op.y) < 14)
         );
 
         if (!col || attempts === 49) {
@@ -369,11 +369,13 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
     return { items: results, connectors: connectorLines, maxRadius };
   }, [processedItems]);
 
-  // 月份切换或数据变更时，自适应视口初识缩放并居中
+  // 月份切换或数据变更时，自适应视口初始缩放并居中
   useEffect(() => {
     setOffset({ x: 0, y: 0 });
-    if (layout.maxRadius > 370) {
-      setZoom(Math.max(0.45, Math.min(1, 370 / layout.maxRadius)));
+    if (layout.maxRadius > 350) {
+      setZoom(Math.max(0.45, Math.min(1.15, 350 / layout.maxRadius)));
+    } else if (layout.maxRadius > 0) {
+      setZoom(Math.min(1.15, 320 / layout.maxRadius));
     } else {
       setZoom(1);
     }
@@ -693,8 +695,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
           <button
             onClick={() => {
               setOffset({ x: 0, y: 0 });
-              if (layout.maxRadius > 370) {
-                setZoom(Math.max(0.45, Math.min(1, 370 / layout.maxRadius)));
+              if (layout.maxRadius > 350) {
+                setZoom(Math.max(0.45, Math.min(1.15, 350 / layout.maxRadius)));
+              } else if (layout.maxRadius > 0) {
+                setZoom(Math.min(1.15, 320 / layout.maxRadius));
               } else {
                 setZoom(1);
               }
