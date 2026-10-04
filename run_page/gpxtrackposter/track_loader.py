@@ -92,8 +92,27 @@ class TrackLoader:
         log.info(f"Conventionally loaded tracks: {len(loaded_tracks)}")
 
         tracks = self._filter_tracks(tracks)
-        # filter out tracks with length < min_length
-        return [t for t in tracks if t.length >= self.min_length]
+        # filter out tracks with length < min_length, but keep climbing activities
+        return [
+            t for t in tracks
+            if t.length >= self.min_length or self._is_climbing_track(t)
+        ]
+
+    @staticmethod
+    def _is_climbing_track(t):
+        ttype = (getattr(t, "type", "") or "").lower()
+        tname = (getattr(t, "track_name", "") or "").lower()
+        if ttype in [
+            "indoor_climbing",
+            "bouldering",
+            "rock_climbing",
+            "climbing",
+            "mountaineering",
+        ]:
+            return True
+        if any(k in tname for k in ["攀岩", "抱石", "climb"]):
+            return True
+        return False
 
     def load_tracks_from_db(self, sql_file, is_grid=False):
         session = init_db(sql_file)
@@ -119,7 +138,7 @@ class TrackLoader:
         filtered_tracks = []
         for t in tracks:
             file_name = t.file_names[0]
-            if int(t.length) == 0:
+            if int(t.length) == 0 and not self._is_climbing_track(t):
                 log.info(f"{file_name}: skipping empty track")
             elif not t.start_time_local:
                 log.info(f"{file_name}: skipping track without start time")

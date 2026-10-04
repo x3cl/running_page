@@ -112,7 +112,12 @@ export const isManualClimbRecord = (activity: {
   const time = activity.moving_time || '';
   const isZeroDist = dist === 0;
   const isZeroTime =
-    time === '0:00:00' || time === '0' || time === 0 || time === '';
+    time === '0:00:00' ||
+    time === '0' ||
+    time === 0 ||
+    time === '' ||
+    time === '0s' ||
+    time === '1970-01-01 00:00:00';
   return isZeroDist && isZeroTime;
 };
 

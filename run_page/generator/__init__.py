@@ -131,10 +131,11 @@ class Generator:
         query = self.session.query(Activity).filter(
             or_(
                 Activity.distance > 0.1,
-                Activity.type.in_(["indoor_climbing", "bouldering", "rock_climbing", "mountaineering", "other"]),
+                Activity.type.in_(["indoor_climbing", "bouldering", "rock_climbing", "mountaineering", "climbing", "other"]),
                 Activity.name.like("%攀岩%"),
                 Activity.name.like("%抱石%"),
                 Activity.name.like("%Climb%"),
+                Activity.name.like("%climb%"),
             )
         )
         if self.only_run:

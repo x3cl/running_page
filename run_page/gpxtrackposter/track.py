@@ -254,6 +254,10 @@ class Track:
         gpx.simplify()
         if self.length == 0:
             self._load_gpx_extensions_data(gpx)
+            if self.start_time and self.end_time and not self.start_time_local:
+                self.start_time_local, self.end_time_local = parse_datetime_to_local(
+                    self.start_time, self.end_time, None
+                )
             return
         polyline_container = []
         heart_rate_list = []
