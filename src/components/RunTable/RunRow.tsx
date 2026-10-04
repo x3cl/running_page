@@ -24,10 +24,27 @@ const RunRow = ({
   runIndex,
   setRunIndex,
 }: IRunRowProperties) => {
-  const distance = (run.distance / M_TO_DIST).toFixed(2);
+  const isZeroDist = !run.distance || run.distance === 0;
+  const isZeroTime =
+    !run.moving_time ||
+    run.moving_time === '0:00:00' ||
+    run.moving_time === '0';
+  const name = (run.name || '').toLowerCase();
+  const type = (run.type || '').toLowerCase();
+  const isManualClimb =
+    (type.includes('climb') ||
+      type.includes('boulder') ||
+      type.includes('mountaineering') ||
+      name.includes('攀岩') ||
+      name.includes('野攀') ||
+      name.includes('抱石')) &&
+    isZeroDist &&
+    isZeroTime;
+
+  const distance = isManualClimb ? '-' : (run.distance / M_TO_DIST).toFixed(2);
   const paceParts = run.average_speed ? formatPace(run.average_speed) : null;
   const heartRate = run.average_heartrate;
-  const runTime = formatRunTime(run.moving_time);
+  const runTime = isManualClimb ? '手动打卡' : formatRunTime(run.moving_time);
   const handleClick = () => {
     if (runIndex === elementIndex) {
       setRunIndex(-1);
@@ -44,7 +61,25 @@ const RunRow = ({
       key={run.start_date_local}
       onClick={handleClick}
     >
-      <td>{titleForRun(run)}</td>
+      <td>
+        {titleForRun(run)}
+        {isManualClimb && (
+          <span
+            style={{
+              marginLeft: '6px',
+              padding: '1px 6px',
+              fontSize: '10px',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(0, 229, 255, 0.15)',
+              color: '#00e5ff',
+              border: '1px solid rgba(0, 229, 255, 0.35)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            手动打卡
+          </span>
+        )}
+      </td>
       <td>{distance}</td>
       {SHOW_ELEVATION_GAIN && (
         <td>{((run.elevation_gain ?? 0) * M_TO_ELEV).toFixed(1)}</td>

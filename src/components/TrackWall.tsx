@@ -41,6 +41,12 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
     activities.forEach((activity, idx) => {
       const name = (activity.name || '').toLowerCase();
       const type = (activity.type || '').toLowerCase();
+      const dist = activity.distance || 0;
+      const rawTime = activity.moving_time || '';
+      const isZeroDist = dist === 0;
+      const isZeroTime =
+        rawTime === '0:00:00' || rawTime === '0' || rawTime === 0 || rawTime === '';
+      const isManual = isZeroDist && isZeroTime;
 
       // 判断攀岩类型
       const isIndoorBouldering =
@@ -58,18 +64,20 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
           name.includes('climboutdoor') ||
           name.includes('pitches') ||
           name.includes('野攀') ||
+          (name.includes('攀岩') && !name.includes('室内')) ||
           (name.includes('climb') && !name.includes('室内')));
 
       if (isIndoorBouldering) {
         items.push({
           id: activity.run_id || idx,
-          name: activity.name || '室内抱石',
+          name: activity.name || (isManual ? '室内抱石 (手动记录)' : '室内抱石'),
           date: activity.start_date_local,
           duration: activity.moving_time,
           heartrate: activity.average_heartrate,
           elevation: activity.elevation_gain || activity.total_elevation_gain,
           type: 'indoor_bouldering',
           category: 'indoor_bouldering',
+          isManual,
           color: '#ffcc00',
         });
         return;
@@ -78,13 +86,14 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
       if (isIndoorClimb) {
         items.push({
           id: activity.run_id || idx,
-          name: activity.name || '室内攀岩',
+          name: activity.name || (isManual ? '室内攀岩 (手动记录)' : '室内攀岩'),
           date: activity.start_date_local,
           duration: activity.moving_time,
           heartrate: activity.average_heartrate,
           elevation: activity.elevation_gain || activity.total_elevation_gain,
           type: 'indoor_climbing',
           category: 'indoor_climbing',
+          isManual,
           color: '#ff6a00',
         });
         return;
@@ -93,7 +102,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
       if (isOutdoorClimb) {
         items.push({
           id: activity.run_id || idx,
-          name: activity.name || '室外野攀',
+          name: activity.name || (isManual ? '室外野攀 (手动打卡)' : '室外野攀'),
           date: activity.start_date_local,
           distance: activity.distance,
           duration: activity.moving_time,
@@ -101,6 +110,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
           elevation: activity.elevation_gain || activity.total_elevation_gain,
           type: 'outdoor_climbing',
           category: 'outdoor_climbing',
+          isManual,
           color: '#00e5ff',
         });
         return;
@@ -566,6 +576,19 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                     className="pointer-events-auto climb-pebble-node"
                     onMouseEnter={() => setHoveredItem(item)}
                   >
+                    {/* 手动打卡外圈虚线星环光晕 */}
+                    {item.isManual && (
+                      <circle
+                        cx="0"
+                        cy="0"
+                        r={13.5}
+                        fill="none"
+                        stroke={item.color}
+                        strokeWidth={1}
+                        strokeDasharray="2.5 3"
+                        opacity={0.65}
+                      />
+                    )}
                     <g className="pebble-body" filter="url(#glow)">
                       <path
                         d={ROCK_CLIMBING_ICON_PATH}
@@ -601,11 +624,11 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                   }}
                 >
                   {hoveredItem.category === 'indoor_bouldering'
-                    ? '🧗‍♂️ 室内抱石'
+                    ? (hoveredItem.isManual ? '🧗‍♂️ 室内抱石 · 手动打卡' : '🧗‍♂️ 室内抱石')
                     : hoveredItem.category === 'indoor_climbing'
-                    ? '🧗 室内高壁攀岩'
+                    ? (hoveredItem.isManual ? '🧗 室内高壁 · 手动打卡' : '🧗 室内高壁攀岩')
                     : hoveredItem.category === 'outdoor_climbing'
-                    ? '🧗‍♀️ 室外野攀 (Topo)'
+                    ? (hoveredItem.isManual ? '🧗‍♀️ 室外野攀 · 手动打卡' : '🧗‍♀️ 室外野攀 (Topo)')
                     : '🏃 轨迹路线'}
                 </span>
                 <span className="text-[11px] font-mono text-gray-400">
@@ -618,21 +641,32 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                {hoveredItem.distance > 0 && (
-                  <div>
-                    <span className="text-gray-500 block text-[10px]">距离</span>
-                    <span className="font-bold text-white">
-                      {(hoveredItem.distance / 1000).toFixed(2)} km
+                {hoveredItem.isManual ? (
+                  <div className="col-span-2 py-1 px-2 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between text-gray-300">
+                    <span className="text-[10px] text-gray-400">记录属性</span>
+                    <span className="text-[11px] font-semibold text-cyan-300">
+                      📍 手动打卡 (距离/时长为0)
                     </span>
                   </div>
-                )}
-                {hoveredItem.duration && (
-                  <div>
-                    <span className="text-gray-500 block text-[10px]">时长</span>
-                    <span className="font-bold text-white">
-                      {formatTime(hoveredItem.duration)}
-                    </span>
-                  </div>
+                ) : (
+                  <>
+                    {hoveredItem.distance > 0 && (
+                      <div>
+                        <span className="text-gray-500 block text-[10px]">距离</span>
+                        <span className="font-bold text-white">
+                          {(hoveredItem.distance / 1000).toFixed(2)} km
+                        </span>
+                      </div>
+                    )}
+                    {hoveredItem.duration && hoveredItem.duration !== '0:00:00' && (
+                      <div>
+                        <span className="text-gray-500 block text-[10px]">时长</span>
+                        <span className="font-bold text-white">
+                          {formatTime(hoveredItem.duration)}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
                 {hoveredItem.heartrate > 0 && (
                   <div>

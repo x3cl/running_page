@@ -61,6 +61,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
     let boulderingSecs = 0;
 
     let outdoorClimbCount = 0;
+    let manualOutdoorClimbCount = 0;
     let outdoorClimbElevation = 0;
     let outdoorClimbSecs = 0;
 
@@ -70,6 +71,9 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
       const secs = parseSeconds(act.moving_time);
       const name = (act.name || '').toLowerCase();
       const type = (act.type || '').toLowerCase();
+      const isManual =
+        dist === 0 &&
+        (secs === 0 || !act.moving_time || act.moving_time === '0:00:00');
 
       totalDistMeters += dist;
       totalElevation += elev;
@@ -91,6 +95,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
           name.includes('climboutdoor') ||
           name.includes('pitches') ||
           name.includes('野攀') ||
+          (name.includes('攀岩') && !name.includes('室内')) ||
           (name.includes('climb') && !name.includes('室内')));
 
       if (isIndoorBouldering) {
@@ -101,6 +106,9 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
         indoorClimbSecs += secs;
       } else if (isOutdoorClimb) {
         outdoorClimbCount++;
+        if (isManual) {
+          manualOutdoorClimbCount++;
+        }
         outdoorClimbElevation += elev;
         outdoorClimbSecs += secs;
       } else if (type.includes('ride') || type.includes('cycling')) {
@@ -132,7 +140,9 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
       boulderingCount,
       boulderingTimeStr: formatHours(boulderingSecs),
       outdoorClimbCount,
+      manualOutdoorClimbCount,
       outdoorClimbElevationM: Math.round(outdoorClimbElevation),
+      outdoorClimbSecs,
       outdoorClimbTimeStr: formatHours(outdoorClimbSecs),
     };
   }, [activities]);
@@ -244,7 +254,14 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
             </span>
             <span className="text-white font-black">{stats.outdoorClimbCount} 次</span>
             <span className="text-cyan-300/80 text-[10px]">
-              ({stats.outdoorClimbElevationM > 0 ? `+${stats.outdoorClimbElevationM}m, ` : ''}{stats.outdoorClimbTimeStr})
+              (
+              {stats.outdoorClimbElevationM > 0 ? `+${stats.outdoorClimbElevationM}m, ` : ''}
+              {stats.outdoorClimbSecs > 0
+                ? stats.manualOutdoorClimbCount > 0
+                  ? `${stats.outdoorClimbTimeStr} + ${stats.manualOutdoorClimbCount}次手动`
+                  : stats.outdoorClimbTimeStr
+                : `${stats.manualOutdoorClimbCount} 次手动打卡`}
+              )
             </span>
           </div>
         )}
