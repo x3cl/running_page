@@ -55,6 +55,67 @@ export interface Activity {
   streak: number;
 }
 
+export type ClimbCategory =
+  | 'indoor_bouldering'
+  | 'indoor_climbing'
+  | 'outdoor_climbing'
+  | null;
+
+export const getClimbCategory = (activity: {
+  name?: string;
+  type?: string;
+  start_date_local?: string;
+}): ClimbCategory => {
+  const name = (activity.name || '').toLowerCase();
+  const type = (activity.type || '').toLowerCase();
+  const date = activity.start_date_local || '';
+
+  // 1. 室内抱石 (Indoor Bouldering)
+  const isIndoorBouldering =
+    name.includes('抱石') || type.includes('boulder');
+  if (isIndoorBouldering) return 'indoor_bouldering';
+
+  // 2. 室外攀岩 (Outdoor Climbing)
+  // 用户特别指明：9月4号的 climbing (如密云区 Climbing/海淀区/青岛市等)、9月11号的攀岩 (如2020-09-11等)、
+  // 以及所有包含攀岩/野攀/climb/climbing/rock_climbing/mountaineering 且非纯室内场馆的记录，全都是室外攀岩！
+  const isSpecificOutdoorDate =
+    date.startsWith('2020-09-11') && name.includes('攀岩');
+
+  const isExplicitOutdoor =
+    isSpecificOutdoorDate ||
+    type.includes('rock_climbing') ||
+    type.includes('mountaineering') ||
+    name.includes('climboutdoor') ||
+    name.includes('pitches') ||
+    name.includes('野攀') ||
+    (name.includes('climbing') && !name.includes('indoor') && !name.includes('室内')) ||
+    (name.includes('climb') && !name.includes('indoor') && !name.includes('室内')) ||
+    (name.includes('攀岩') && !name.includes('室内'));
+
+  if (isExplicitOutdoor) return 'outdoor_climbing';
+
+  // 3. 室内攀岩 (Indoor Climbing)
+  const isIndoorClimb =
+    name.includes('室内攀岩') ||
+    type.includes('indoor_climbing') ||
+    (name.includes('indoor') && name.includes('climb'));
+  if (isIndoorClimb) return 'indoor_climbing';
+
+  return null;
+};
+
+export const isManualClimbRecord = (activity: {
+  distance?: number;
+  moving_time?: string;
+}): boolean => {
+  const dist = activity.distance || 0;
+  const time = activity.moving_time || '';
+  const isZeroDist = dist === 0;
+  const isZeroTime =
+    time === '0:00:00' || time === '0' || time === 0 || time === '';
+  return isZeroDist && isZeroTime;
+};
+
 const titleForShow = (run: Activity): string => {
   const date = run.start_date_local.slice(0, 11);
   const distance = (run.distance / M_TO_DIST).toFixed(2);

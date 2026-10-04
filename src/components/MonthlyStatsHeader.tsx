@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { getClimbCategory, isManualClimbRecord } from '@/utils/utils';
 
 interface MonthlyStatsHeaderProps {
   year: number;
@@ -71,40 +72,21 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
       const secs = parseSeconds(act.moving_time);
       const name = (act.name || '').toLowerCase();
       const type = (act.type || '').toLowerCase();
-      const isManual =
-        dist === 0 &&
-        (secs === 0 || !act.moving_time || act.moving_time === '0:00:00');
+      const climbCat = getClimbCategory(act);
+      const isManual = climbCat ? isManualClimbRecord(act) : false;
 
       totalDistMeters += dist;
       totalElevation += elev;
       totalSecs += secs;
 
-      // 区分三大攀岩运动
-      const isIndoorBouldering =
-        name.includes('抱石') || type.includes('boulder');
-      const isIndoorClimb =
-        !isIndoorBouldering &&
-        (name.includes('室内攀岩') ||
-          type.includes('indoor_climbing') ||
-          (name.includes('indoor') && name.includes('climb')));
-      const isOutdoorClimb =
-        !isIndoorBouldering &&
-        !isIndoorClimb &&
-        (type.includes('rock_climbing') ||
-          type.includes('mountaineering') ||
-          name.includes('climboutdoor') ||
-          name.includes('pitches') ||
-          name.includes('野攀') ||
-          (name.includes('攀岩') && !name.includes('室内')) ||
-          (name.includes('climb') && !name.includes('室内')));
-
-      if (isIndoorBouldering) {
+      // 区分三大攀岩运动与常规运动
+      if (climbCat === 'indoor_bouldering') {
         boulderingCount++;
         boulderingSecs += secs;
-      } else if (isIndoorClimb) {
+      } else if (climbCat === 'indoor_climbing') {
         indoorClimbCount++;
         indoorClimbSecs += secs;
-      } else if (isOutdoorClimb) {
+      } else if (climbCat === 'outdoor_climbing') {
         outdoorClimbCount++;
         if (isManual) {
           manualOutdoorClimbCount++;

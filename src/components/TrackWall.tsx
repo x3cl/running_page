@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import polyline from '@mapbox/polyline';
+import { getClimbCategory, isManualClimbRecord } from '@/utils/utils';
 
 interface TrackWallProps {
   activities: any[];
@@ -39,35 +40,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
     const items: any[] = [];
 
     activities.forEach((activity, idx) => {
-      const name = (activity.name || '').toLowerCase();
-      const type = (activity.type || '').toLowerCase();
-      const dist = activity.distance || 0;
-      const rawTime = activity.moving_time || '';
-      const isZeroDist = dist === 0;
-      const isZeroTime =
-        rawTime === '0:00:00' || rawTime === '0' || rawTime === 0 || rawTime === '';
-      const isManual = isZeroDist && isZeroTime;
+      const climbCat = getClimbCategory(activity);
+      const isManual = climbCat ? isManualClimbRecord(activity) : false;
 
-      // 判断攀岩类型
-      const isIndoorBouldering =
-        name.includes('抱石') || type.includes('boulder');
-      const isIndoorClimb =
-        !isIndoorBouldering &&
-        (name.includes('室内攀岩') ||
-          type.includes('indoor_climbing') ||
-          (name.includes('indoor') && name.includes('climb')));
-      const isOutdoorClimb =
-        !isIndoorBouldering &&
-        !isIndoorClimb &&
-        (type.includes('rock_climbing') ||
-          type.includes('mountaineering') ||
-          name.includes('climboutdoor') ||
-          name.includes('pitches') ||
-          name.includes('野攀') ||
-          (name.includes('攀岩') && !name.includes('室内')) ||
-          (name.includes('climb') && !name.includes('室内')));
-
-      if (isIndoorBouldering) {
+      if (climbCat === 'indoor_bouldering') {
         items.push({
           id: activity.run_id || idx,
           name: activity.name || (isManual ? '室内抱石 (手动记录)' : '室内抱石'),
@@ -83,7 +59,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         return;
       }
 
-      if (isIndoorClimb) {
+      if (climbCat === 'indoor_climbing') {
         items.push({
           id: activity.run_id || idx,
           name: activity.name || (isManual ? '室内攀岩 (手动记录)' : '室内攀岩'),
@@ -99,7 +75,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         return;
       }
 
-      if (isOutdoorClimb) {
+      if (climbCat === 'outdoor_climbing') {
         items.push({
           id: activity.run_id || idx,
           name: activity.name || (isManual ? '室外野攀 (手动打卡)' : '室外野攀'),

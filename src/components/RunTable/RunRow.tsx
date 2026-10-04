@@ -4,9 +4,12 @@ import {
   formatRunTime,
   Activity,
   RunIds,
+  getClimbCategory,
+  isManualClimbRecord,
+  M_TO_DIST,
+  M_TO_ELEV,
 } from '@/utils/utils';
 import { SHOW_ELEVATION_GAIN } from '@/utils/const';
-import { M_TO_DIST, M_TO_ELEV } from '@/utils/utils';
 import styles from './style.module.css';
 
 interface IRunRowProperties {
@@ -24,27 +27,13 @@ const RunRow = ({
   runIndex,
   setRunIndex,
 }: IRunRowProperties) => {
-  const isZeroDist = !run.distance || run.distance === 0;
-  const isZeroTime =
-    !run.moving_time ||
-    run.moving_time === '0:00:00' ||
-    run.moving_time === '0';
-  const name = (run.name || '').toLowerCase();
-  const type = (run.type || '').toLowerCase();
-  const isManualClimb =
-    (type.includes('climb') ||
-      type.includes('boulder') ||
-      type.includes('mountaineering') ||
-      name.includes('攀岩') ||
-      name.includes('野攀') ||
-      name.includes('抱石')) &&
-    isZeroDist &&
-    isZeroTime;
+  const climbCat = getClimbCategory(run);
+  const isManual = climbCat ? isManualClimbRecord(run) : false;
 
-  const distance = isManualClimb ? '-' : (run.distance / M_TO_DIST).toFixed(2);
-  const paceParts = run.average_speed ? formatPace(run.average_speed) : null;
+  const distance = isManual ? '-' : (run.distance / M_TO_DIST).toFixed(2);
+  const paceParts = climbCat ? null : (run.average_speed ? formatPace(run.average_speed) : null);
   const heartRate = run.average_heartrate;
-  const runTime = isManualClimb ? '手动打卡' : formatRunTime(run.moving_time);
+  const runTime = isManual ? '手动打卡' : formatRunTime(run.moving_time);
   const handleClick = () => {
     if (runIndex === elementIndex) {
       setRunIndex(-1);
@@ -63,7 +52,39 @@ const RunRow = ({
     >
       <td>
         {titleForRun(run)}
-        {isManualClimb && (
+        {climbCat === 'indoor_bouldering' && (
+          <span
+            style={{
+              marginLeft: '6px',
+              padding: '1px 6px',
+              fontSize: '10px',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(255, 204, 0, 0.15)',
+              color: '#ffcc00',
+              border: '1px solid rgba(255, 204, 0, 0.35)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {isManual ? '🧗‍♂️ 抱石·打卡' : '🧗‍♂️ 抱石'}
+          </span>
+        )}
+        {climbCat === 'indoor_climbing' && (
+          <span
+            style={{
+              marginLeft: '6px',
+              padding: '1px 6px',
+              fontSize: '10px',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(255, 106, 0, 0.15)',
+              color: '#ff6a00',
+              border: '1px solid rgba(255, 106, 0, 0.35)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {isManual ? '🧗 室内高壁·打卡' : '🧗 室内攀岩'}
+          </span>
+        )}
+        {climbCat === 'outdoor_climbing' && (
           <span
             style={{
               marginLeft: '6px',
@@ -76,7 +97,7 @@ const RunRow = ({
               whiteSpace: 'nowrap',
             }}
           >
-            手动打卡
+            {isManual ? '🧗‍♀️ 室外野攀·手动打卡' : '🧗‍♀️ 室外野攀'}
           </span>
         )}
       </td>
