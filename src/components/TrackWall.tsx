@@ -20,21 +20,22 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // 1. 赛博霓虹调色盘
-  const getActivityColor = (type: string, name: string = '') => {
+  const getActivityColor = (type: string, name: string = '', subtype: string = '') => {
     const t = (type || '').toLowerCase();
     const n = (name || '').toLowerCase();
-    if (n.includes('抱石') || t.includes('boulder')) return "#ffcc00"; // 抱石金黄
+    const st = (subtype || '').toLowerCase();
+    if (n.includes('抱石') || t.includes('boulder') || st.includes('boulder')) return "#ffcc00"; // 抱石金黄
     if (n.includes('室内攀岩') || t.includes('indoor_climbing')) return "#ff6a00"; // 室内攀岩炽热橙
-    if (t.includes('rock_climbing') || t.includes('mountaineering') || n.includes('climb')) return "#00e5ff"; // 野攀电光青
-    if (t.includes('trail')) return "#39ff14"; // 荧光绿 (Acid Green)
-    if (t.includes('ski') || t.includes('snowboard')) return "#00f0ff"; // 冰川青
-    if (t.includes('cycling') || t.includes('ride')) return "#ff00ff"; // 极光紫 (Magenta)
-    if (t.includes('swim')) return "#7000ff"; // 霓虹深紫
-    if (t.includes('hike') || t.includes('walk')) return "#ff9100"; // 炽热橙
-    return "#ff3131"; // 赛博红 (Electric Red)
+    if (t.includes('rock_climbing') || t.includes('mountaineering') || n.includes('climb') || n.includes('野攀') || n.includes('攀岩')) return "#00e5ff"; // 野攀电光青
+    if (t.includes('trail') || st.includes('trail') || n.includes('越野')) return "#39ff14"; // 越野跑 荧光绿 (Acid Neon Green)
+    if (t.includes('ski') || t.includes('snowboard') || n.includes('滑雪')) return "#00f0ff"; // 冰川青
+    if (t.includes('cycling') || t.includes('ride') || t.includes('biking') || n.includes('骑行')) return "#ff00ff"; // 极光紫 (Magenta)
+    if (t.includes('swim') || t.includes('paddle') || t.includes('rowing') || n.includes('游泳') || n.includes('水上')) return "#7000ff"; // 霓虹深紫
+    if (t.includes('hike') || t.includes('walk') || n.includes('徒步') || n.includes('健走')) return "#ff9100"; // 徒步 炽热琥珀橙
+    return "#ff3131"; // 路跑 赛博红 (Electric Red)
   };
 
-  // 2. 数据分类与准备（关键：独立轨迹不合并，加入三大攀岩类型）
+  // 2. 数据分类与准备（关键：如果有轨迹就加进去；无轨迹的攀岩/室内运动以节点呈现）
   const processedItems = useMemo(() => {
     if (!activities || !activities.length) return [];
     const items: any[] = [];
@@ -42,7 +43,54 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
     activities.forEach((activity, idx) => {
       const climbCat = getClimbCategory(activity);
       const isManual = climbCat ? isManualClimbRecord(activity) : false;
+      const type = (activity.type || '').toLowerCase();
+      const name = (activity.name || '').toLowerCase();
+      const subtype = (activity.subtype || '').toLowerCase();
 
+      const isTrail = type.includes('trail') || subtype.includes('trail') || name.includes('越野');
+      const isRoadRun =
+        (type === 'run' ||
+          type === 'running' ||
+          type === 'road_running' ||
+          type === 'treadmill' ||
+          name.includes('路跑') ||
+          (name.includes('跑步') && !name.includes('越野'))) &&
+        !isTrail;
+      const isHike = type.includes('hike') || type.includes('walk') || name.includes('徒步') || name.includes('健走');
+      const isRide = type.includes('ride') || type.includes('cycling') || type.includes('biking') || name.includes('骑行');
+      const isSki = type.includes('ski') || type.includes('snowboard') || name.includes('滑雪');
+      const isSwim = type.includes('swim') || type.includes('paddle') || type.includes('rowing') || name.includes('游泳');
+
+      // 核心需求：“如果有轨迹就加进去” —— 无论室外野攀、越野跑、路跑、徒步还是骑行，只要有轨迹即加入真实轨迹！
+      if (activity.summary_polyline) {
+        const pts = polyline.decode(activity.summary_polyline);
+        if (pts.length >= 2) {
+          items.push({
+            id: activity.run_id || idx,
+            name: activity.name || (climbCat === 'outdoor_climbing' ? '室外攀岩轨迹' : '运动轨迹'),
+            date: activity.start_date_local,
+            distance: activity.distance,
+            duration: activity.moving_time,
+            heartrate: activity.average_heartrate,
+            elevation: activity.elevation_gain || activity.total_elevation_gain,
+            type: activity.type,
+            subtype: activity.subtype,
+            category: 'gps_track',
+            climbCategory: climbCat,
+            isTrail,
+            isRoadRun,
+            isHike,
+            isRide,
+            isSki,
+            isSwim,
+            rawPoints: pts,
+            color: getActivityColor(activity.type, activity.name, activity.subtype),
+          });
+          return;
+        }
+      }
+
+      // 无 GPS 轨迹的室内/打卡记录
       if (climbCat === 'indoor_bouldering') {
         items.push({
           id: activity.run_id || idx,
@@ -92,27 +140,21 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         return;
       }
 
-      // 常规户外有 GPS 轨迹的活动（跑步、越野跑、骑行、徒步等）
-      if (activity.summary_polyline) {
-        const pts = polyline.decode(activity.summary_polyline);
-        if (pts.length >= 5) {
-          // 不做合并！每一次运动独立加入
-          items.push({
-            id: activity.run_id || idx,
-            name: activity.name || '跑步活动',
-            date: activity.start_date_local,
-            distance: activity.distance,
-            duration: activity.moving_time,
-            heartrate: activity.average_heartrate,
-            elevation: activity.elevation_gain || activity.total_elevation_gain,
-            type: activity.type,
-            category: 'gps_track',
-            points: pts.filter((_, i) => i % 10 === 0),
-            rawPoints: pts,
-            color: getActivityColor(activity.type, activity.name),
-          });
-        }
-      }
+      // 其他无 GPS 的运动记录（如室内跑步机、健身等）
+      items.push({
+        id: activity.run_id || idx,
+        name: activity.name || '室内运动',
+        date: activity.start_date_local,
+        distance: activity.distance,
+        duration: activity.moving_time,
+        heartrate: activity.average_heartrate,
+        elevation: activity.elevation_gain || activity.total_elevation_gain,
+        type: activity.type,
+        subtype: activity.subtype,
+        category: 'indoor_workout',
+        isManual: true,
+        color: getActivityColor(activity.type, activity.name, activity.subtype),
+      });
     });
 
     return items;
@@ -345,6 +387,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         pathData,
         strokeWidth: 2.2,
         opacity: 0.92,
+        startPt: finalPtsTrans[0],
       });
 
       // 将轨迹点加入占用点云
@@ -518,24 +561,40 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
               ))}
             </g>
 
-            {/* 2. 轨迹线与攀岩节点 */}
+            {/* 2. 轨迹线与攀岩/运动节点 */}
             {layout.items.map((item, i) => {
-              // 1. 常规独立 GPS 轨迹线
+              // 1. 常规独立 GPS 轨迹线（路跑、越野跑、室外野攀、徒步、骑行等）
               if (item.category === 'gps_track') {
                 return (
-                  <polyline
-                    key={`gps-${item.id}-${i}`}
-                    points={item.pathData}
-                    className="cyber-line pointer-events-auto"
-                    fill="none"
-                    stroke={item.color}
-                    strokeWidth={item.strokeWidth}
-                    strokeOpacity={item.opacity}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    style={{ mixBlendMode: 'screen' }}
-                    onMouseEnter={() => setHoveredItem(item)}
-                  />
+                  <g key={`gps-group-${item.id}-${i}`}>
+                    <polyline
+                      points={item.pathData}
+                      className="cyber-line pointer-events-auto"
+                      fill="none"
+                      stroke={item.color}
+                      strokeWidth={item.strokeWidth}
+                      strokeOpacity={item.opacity}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      style={{ mixBlendMode: 'screen' }}
+                      onMouseEnter={() => setHoveredItem(item)}
+                    />
+                    {/* 如果是室外野攀轨迹，在起点位置叠加攀登小人图标 */}
+                    {item.climbCategory === 'outdoor_climbing' && item.startPt && (
+                      <g
+                        transform={`translate(${item.startPt.x}, ${item.startPt.y}) scale(0.85)`}
+                        className="pointer-events-auto climb-pebble-node"
+                        onMouseEnter={() => setHoveredItem(item)}
+                      >
+                        <g filter="url(#glow)">
+                          <path
+                            d={ROCK_CLIMBING_ICON_PATH}
+                            fill="#00e5ff"
+                          />
+                        </g>
+                      </g>
+                    )}
+                  </g>
                 );
               }
 
@@ -575,6 +634,37 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                 );
               }
 
+              // 3. 其他室内无 GPS 活动节点（例如跑步机、室内器械）
+              if (item.category === 'indoor_workout') {
+                return (
+                  <g
+                    key={`workout-dot-${item.id}-${i}`}
+                    transform={`translate(${item.x}, ${item.y})`}
+                    className="pointer-events-auto climb-pebble-node"
+                    onMouseEnter={() => setHoveredItem(item)}
+                  >
+                    <circle
+                      cx="0"
+                      cy="0"
+                      r={6}
+                      fill={item.color}
+                      filter="url(#glow)"
+                      opacity={0.9}
+                    />
+                    <circle
+                      cx="0"
+                      cy="0"
+                      r={10}
+                      fill="none"
+                      stroke={item.color}
+                      strokeWidth={1}
+                      strokeDasharray="2 2"
+                      opacity={0.4}
+                    />
+                  </g>
+                );
+              }
+
               return null;
             })}
           </svg>
@@ -599,13 +689,27 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                     border: `1px solid ${hoveredItem.color}55`,
                   }}
                 >
-                  {hoveredItem.category === 'indoor_bouldering'
+                  {hoveredItem.climbCategory === 'outdoor_climbing'
+                    ? (hoveredItem.rawPoints ? '🧗‍♀️ 室外野攀 · GPS 轨迹' : (hoveredItem.isManual ? '🧗‍♀️ 室外野攀 · 手动打卡' : '🧗‍♀️ 室外野攀'))
+                    : hoveredItem.category === 'indoor_bouldering'
                     ? (hoveredItem.isManual ? '🧗‍♂️ 室内抱石 · 手动打卡' : '🧗‍♂️ 室内抱石')
                     : hoveredItem.category === 'indoor_climbing'
                     ? (hoveredItem.isManual ? '🧗 室内高壁 · 手动打卡' : '🧗 室内高壁攀岩')
-                    : hoveredItem.category === 'outdoor_climbing'
-                    ? (hoveredItem.isManual ? '🧗‍♀️ 室外野攀 · 手动打卡' : '🧗‍♀️ 室外野攀 (Topo)')
-                    : '🏃 轨迹路线'}
+                    : hoveredItem.isTrail
+                    ? '🏔️ 越野跑轨迹'
+                    : hoveredItem.isRoadRun
+                    ? '🏃‍♂️ 路跑轨迹'
+                    : hoveredItem.isHike
+                    ? '🥾 徒步轨迹'
+                    : hoveredItem.isRide
+                    ? '🚴 骑行轨迹'
+                    : hoveredItem.isSki
+                    ? '⛷️ 滑雪轨迹'
+                    : hoveredItem.isSwim
+                    ? '🏊 游泳水上轨迹'
+                    : hoveredItem.category === 'indoor_workout'
+                    ? '⚡ 室内运动'
+                    : '🏃 运动轨迹'}
                 </span>
                 <span className="text-[11px] font-mono text-gray-400">
                   {hoveredItem.date ? hoveredItem.date.split(' ')[0] : ''}
@@ -664,6 +768,38 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
             </div>
           </div>
         )}
+
+        {/* 左下角图例 HUD (Legend) */}
+        <div className="absolute bottom-8 left-8 z-40 hidden sm:flex flex-wrap items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 shadow-2xl pointer-events-none select-none text-[11px] font-mono text-gray-300">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3.5 h-1 rounded-full bg-[#ff3131] inline-block shadow-[0_0_8px_#ff3131]" />
+            <span>路跑</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3.5 h-1 rounded-full bg-[#39ff14] inline-block shadow-[0_0_8px_#39ff14]" />
+            <span>越野跑</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3.5 h-1 rounded-full bg-[#ff9100] inline-block shadow-[0_0_8px_#ff9100]" />
+            <span>徒步</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3.5 h-1 rounded-full bg-[#ff00ff] inline-block shadow-[0_0_8px_#ff00ff]" />
+            <span>骑行</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#00e5ff] inline-block shadow-[0_0_8px_#00e5ff]" />
+            <span>室外野攀</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ff6a00] inline-block shadow-[0_0_8px_#ff6a00]" />
+            <span>室内攀岩</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ffcc00] inline-block shadow-[0_0_8px_#ffcc00]" />
+            <span>室内抱石</span>
+          </div>
+        </div>
 
         {/* 视口浮动控制条 */}
         <div className="absolute bottom-8 right-8 z-40 flex flex-col space-y-3">

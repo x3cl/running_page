@@ -46,25 +46,60 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
     let totalElevation = 0;
     let totalSecs = 0;
 
-    let runCount = 0;
-    let runDistMeters = 0;
+    // 1. 路跑 (Road Running)
+    let roadRunCount = 0;
+    let roadRunDistMeters = 0;
+    let roadRunElev = 0;
+    let roadRunSecs = 0;
 
-    let rideCount = 0;
-    let rideDistMeters = 0;
+    // 2. 越野跑 (Trail Running)
+    let trailRunCount = 0;
+    let trailRunDistMeters = 0;
+    let trailRunElev = 0;
+    let trailRunSecs = 0;
 
+    // 3. 徒步健走 (Hiking / Walking)
     let hikeCount = 0;
     let hikeDistMeters = 0;
+    let hikeElev = 0;
+    let hikeSecs = 0;
 
+    // 4. 骑行运动 (Cycling)
+    let rideCount = 0;
+    let rideDistMeters = 0;
+    let rideElev = 0;
+    let rideSecs = 0;
+
+    // 5. 室内高壁攀岩 (Indoor Climbing)
     let indoorClimbCount = 0;
     let indoorClimbSecs = 0;
 
+    // 6. 室内抱石 (Indoor Bouldering)
     let boulderingCount = 0;
     let boulderingSecs = 0;
 
+    // 7. 室外野攀 (Outdoor Climbing)
     let outdoorClimbCount = 0;
     let manualOutdoorClimbCount = 0;
     let outdoorClimbElevation = 0;
+    let outdoorClimbDistMeters = 0;
     let outdoorClimbSecs = 0;
+
+    // 8. 滑雪 (Skiing)
+    let skiCount = 0;
+    let skiDistMeters = 0;
+    let skiElev = 0;
+    let skiSecs = 0;
+
+    // 9. 游泳/水上 (Swimming / Water Sports)
+    let swimCount = 0;
+    let swimDistMeters = 0;
+    let swimSecs = 0;
+
+    // 10. 其他运动 (Other)
+    let otherCount = 0;
+    let otherDistMeters = 0;
+    let otherSecs = 0;
 
     activities.forEach((act) => {
       const dist = act.distance || 0;
@@ -72,6 +107,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
       const secs = parseSeconds(act.moving_time);
       const name = (act.name || '').toLowerCase();
       const type = (act.type || '').toLowerCase();
+      const subtype = (act.subtype || '').toLowerCase();
       const climbCat = getClimbCategory(act);
       const isManual = climbCat ? isManualClimbRecord(act) : false;
 
@@ -92,17 +128,79 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
           manualOutdoorClimbCount++;
         }
         outdoorClimbElevation += elev;
+        outdoorClimbDistMeters += dist;
         outdoorClimbSecs += secs;
-      } else if (type.includes('ride') || type.includes('cycling')) {
-        rideCount++;
-        rideDistMeters += dist;
-      } else if (type.includes('hike') || type.includes('walk')) {
+      } else if (
+        type.includes('trail') ||
+        subtype.includes('trail') ||
+        name.includes('越野')
+      ) {
+        // 越野跑 (Trail Running)
+        trailRunCount++;
+        trailRunDistMeters += dist;
+        trailRunElev += elev;
+        trailRunSecs += secs;
+      } else if (
+        type === 'run' ||
+        type === 'running' ||
+        type === 'road_running' ||
+        type === 'treadmill' ||
+        name.includes('路跑') ||
+        (name.includes('跑步') && !name.includes('越野'))
+      ) {
+        // 路跑 (Road Running)
+        roadRunCount++;
+        roadRunDistMeters += dist;
+        roadRunElev += elev;
+        roadRunSecs += secs;
+      } else if (
+        type.includes('hike') ||
+        type.includes('walk') ||
+        name.includes('徒步') ||
+        name.includes('健走')
+      ) {
+        // 徒步 / 健走 (Hiking / Walking)
         hikeCount++;
         hikeDistMeters += dist;
+        hikeElev += elev;
+        hikeSecs += secs;
+      } else if (
+        type.includes('ride') ||
+        type.includes('cycling') ||
+        type.includes('biking') ||
+        name.includes('骑行')
+      ) {
+        // 骑行 (Cycling)
+        rideCount++;
+        rideDistMeters += dist;
+        rideElev += elev;
+        rideSecs += secs;
+      } else if (
+        type.includes('ski') ||
+        type.includes('snowboard') ||
+        name.includes('滑雪')
+      ) {
+        // 滑雪 (Skiing)
+        skiCount++;
+        skiDistMeters += dist;
+        skiElev += elev;
+        skiSecs += secs;
+      } else if (
+        type.includes('swim') ||
+        type.includes('paddle') ||
+        type.includes('rowing') ||
+        name.includes('游泳') ||
+        name.includes('水上')
+      ) {
+        // 游泳 / 水上运动 (Swimming)
+        swimCount++;
+        swimDistMeters += dist;
+        swimSecs += secs;
       } else {
-        // 跑步、越野跑、滑雪等
-        runCount++;
-        runDistMeters += dist;
+        // 其他活动 (Other Sports)
+        otherCount++;
+        otherDistMeters += dist;
+        otherSecs += secs;
       }
     });
 
@@ -111,21 +209,52 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
       totalElevationM: Math.round(totalElevation),
       totalDurationStr: formatHours(totalSecs),
       totalActivities: activities.length,
-      runCount,
-      runDistanceKm: (runDistMeters / 1000).toFixed(1),
-      rideCount,
-      rideDistanceKm: (rideDistMeters / 1000).toFixed(1),
+      // 1. 路跑
+      roadRunCount,
+      roadRunDistanceKm: (roadRunDistMeters / 1000).toFixed(1),
+      roadRunElevationM: Math.round(roadRunElev),
+      roadRunTimeStr: formatHours(roadRunSecs),
+      // 2. 越野跑
+      trailRunCount,
+      trailRunDistanceKm: (trailRunDistMeters / 1000).toFixed(1),
+      trailRunElevationM: Math.round(trailRunElev),
+      trailRunTimeStr: formatHours(trailRunSecs),
+      // 3. 徒步
       hikeCount,
       hikeDistanceKm: (hikeDistMeters / 1000).toFixed(1),
+      hikeElevationM: Math.round(hikeElev),
+      hikeTimeStr: formatHours(hikeSecs),
+      // 4. 骑行
+      rideCount,
+      rideDistanceKm: (rideDistMeters / 1000).toFixed(1),
+      rideElevationM: Math.round(rideElev),
+      rideTimeStr: formatHours(rideSecs),
+      // 5. 室内高壁
       indoorClimbCount,
       indoorClimbTimeStr: formatHours(indoorClimbSecs),
+      // 6. 室内抱石
       boulderingCount,
       boulderingTimeStr: formatHours(boulderingSecs),
+      // 7. 室外野攀
       outdoorClimbCount,
       manualOutdoorClimbCount,
+      outdoorClimbDistanceKm: (outdoorClimbDistMeters / 1000).toFixed(1),
       outdoorClimbElevationM: Math.round(outdoorClimbElevation),
       outdoorClimbSecs,
       outdoorClimbTimeStr: formatHours(outdoorClimbSecs),
+      // 8. 滑雪
+      skiCount,
+      skiDistanceKm: (skiDistMeters / 1000).toFixed(1),
+      skiElevationM: Math.round(skiElev),
+      skiTimeStr: formatHours(skiSecs),
+      // 9. 游泳/水上
+      swimCount,
+      swimDistanceKm: (swimDistMeters / 1000).toFixed(1),
+      swimTimeStr: formatHours(swimSecs),
+      // 10. 其他
+      otherCount,
+      otherDistanceKm: (otherDistMeters / 1000).toFixed(1),
+      otherTimeStr: formatHours(otherSecs),
     };
   }, [activities]);
 
@@ -193,17 +322,35 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
         </div>
       </div>
 
-      {/* 运动分类统计胶囊标签栏（重点突出室内攀岩、抱石与室外野攀） */}
+      {/* 运动分类统计胶囊标签栏（路跑与越野跑分开，独立展示徒步、野攀、高壁、抱石、骑行等全部项目） */}
       <div className="flex flex-wrap items-center gap-2.5 pt-2">
-        {stats.runCount > 0 && (
+        {/* 1. 🏃‍♂️ 路跑 */}
+        {stats.roadRunCount > 0 && (
           <div className="px-3.5 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
-            <span className="text-red-400 font-bold">🏃 跑步/越野</span>
-            <span className="text-white font-bold">{stats.runCount} 次</span>
-            <span className="text-gray-400 text-[10px]">({stats.runDistanceKm} km)</span>
+            <span className="text-red-400 font-bold flex items-center gap-1">
+              🏃‍♂️ 路跑
+            </span>
+            <span className="text-white font-bold">{stats.roadRunCount} 次</span>
+            <span className="text-gray-400 text-[10px]">
+              ({stats.roadRunDistanceKm} km{stats.roadRunElevationM > 0 ? `, +${stats.roadRunElevationM}m` : ''})
+            </span>
           </div>
         )}
 
-        {/* 重点特色：室内抱石专属标签 */}
+        {/* 2. 🏔️ 越野跑 */}
+        {stats.trailRunCount > 0 && (
+          <div className="px-3.5 py-1.5 rounded-xl bg-[#39ff14]/10 border border-[#39ff14]/30 text-xs font-mono text-gray-200 flex items-center space-x-2 shadow-lg shadow-[#39ff14]/5">
+            <span className="text-[#39ff14] font-bold flex items-center gap-1">
+              🏔️ 越野跑
+            </span>
+            <span className="text-white font-bold">{stats.trailRunCount} 次</span>
+            <span className="text-emerald-400/90 text-[10px]">
+              ({stats.trailRunDistanceKm} km, +{stats.trailRunElevationM}m)
+            </span>
+          </div>
+        )}
+
+        {/* 3. 🧗‍♂️ 室内抱石专属标签 */}
         {stats.boulderingCount > 0 && (
           <div className="px-3.5 py-1.5 rounded-xl bg-yellow-500/15 border border-yellow-400/50 text-xs font-mono text-yellow-200 flex items-center space-x-2 shadow-lg shadow-yellow-500/10">
             <span className="text-yellow-400 font-black flex items-center gap-1">
@@ -215,7 +362,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
           </div>
         )}
 
-        {/* 重点特色：室内高壁攀岩专属标签 */}
+        {/* 4. 🧗 室内高壁攀岩专属标签 */}
         {stats.indoorClimbCount > 0 && (
           <div className="px-3.5 py-1.5 rounded-xl bg-orange-500/15 border border-orange-400/50 text-xs font-mono text-orange-200 flex items-center space-x-2 shadow-lg shadow-orange-500/10">
             <span className="text-orange-400 font-black flex items-center gap-1">
@@ -227,12 +374,12 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
           </div>
         )}
 
-        {/* 重点特色：室外野攀 Topo 专属标签 */}
+        {/* 5. 🧗‍♀️ 室外野攀 Topo 专属标签 */}
         {stats.outdoorClimbCount > 0 && (
           <div className="px-3.5 py-1.5 rounded-xl bg-cyan-500/15 border border-cyan-400/50 text-xs font-mono text-cyan-200 flex items-center space-x-2 shadow-lg shadow-cyan-500/10">
             <span className="text-cyan-400 font-black flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              🧗‍♀️ 室外野攀 (Topo)
+              🧗‍♀️ 室外野攀
             </span>
             <span className="text-white font-black">{stats.outdoorClimbCount} 次</span>
             <span className="text-cyan-300/80 text-[10px]">
@@ -240,7 +387,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
               {stats.outdoorClimbElevationM > 0 ? `+${stats.outdoorClimbElevationM}m, ` : ''}
               {stats.outdoorClimbSecs > 0
                 ? stats.manualOutdoorClimbCount > 0
-                  ? `${stats.outdoorClimbTimeStr} + ${stats.manualOutdoorClimbCount}次手动`
+                  ? `${stats.outdoorClimbTimeStr} + ${stats.manualOutdoorClimbCount}次打卡`
                   : stats.outdoorClimbTimeStr
                 : `${stats.manualOutdoorClimbCount} 次手动打卡`}
               )
@@ -248,19 +395,68 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
           </div>
         )}
 
-        {stats.rideCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
-            <span className="text-purple-400 font-bold">🚴 骑行</span>
-            <span className="text-white font-bold">{stats.rideCount} 次</span>
-            <span className="text-gray-400 text-[10px]">({stats.rideDistanceKm} km)</span>
+        {/* 6. 🥾 徒步健走 */}
+        {stats.hikeCount > 0 && (
+          <div className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+            <span className="text-amber-400 font-bold flex items-center gap-1">
+              🥾 徒步
+            </span>
+            <span className="text-white font-bold">{stats.hikeCount} 次</span>
+            <span className="text-amber-300/80 text-[10px]">
+              ({stats.hikeDistanceKm} km{stats.hikeElevationM > 0 ? `, +${stats.hikeElevationM}m` : ''})
+            </span>
           </div>
         )}
 
-        {stats.hikeCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
-            <span className="text-emerald-400 font-bold">🥾 徒步</span>
-            <span className="text-white font-bold">{stats.hikeCount} 次</span>
-            <span className="text-gray-400 text-[10px]">({stats.hikeDistanceKm} km)</span>
+        {/* 7. 🚴 骑行 */}
+        {stats.rideCount > 0 && (
+          <div className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+            <span className="text-purple-400 font-bold flex items-center gap-1">
+              🚴 骑行
+            </span>
+            <span className="text-white font-bold">{stats.rideCount} 次</span>
+            <span className="text-gray-400 text-[10px]">
+              ({stats.rideDistanceKm} km{stats.rideElevationM > 0 ? `, +${stats.rideElevationM}m` : ''})
+            </span>
+          </div>
+        )}
+
+        {/* 8. ⛷️ 滑雪 */}
+        {stats.skiCount > 0 && (
+          <div className="px-3.5 py-1.5 rounded-xl bg-sky-500/10 border border-sky-400/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+            <span className="text-sky-400 font-bold flex items-center gap-1">
+              ⛷️ 滑雪
+            </span>
+            <span className="text-white font-bold">{stats.skiCount} 次</span>
+            <span className="text-sky-300/80 text-[10px]">
+              ({stats.skiDistanceKm} km{stats.skiElevationM > 0 ? `, +${stats.skiElevationM}m` : ''})
+            </span>
+          </div>
+        )}
+
+        {/* 9. 🏊 水上/游泳 */}
+        {stats.swimCount > 0 && (
+          <div className="px-3.5 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-400/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+            <span className="text-indigo-400 font-bold flex items-center gap-1">
+              🏊 水上/游泳
+            </span>
+            <span className="text-white font-bold">{stats.swimCount} 次</span>
+            <span className="text-indigo-300/80 text-[10px]">
+              ({parseFloat(stats.swimDistanceKm) > 0 ? `${stats.swimDistanceKm} km` : stats.swimTimeStr})
+            </span>
+          </div>
+        )}
+
+        {/* 10. ⚡ 其他小项目 */}
+        {stats.otherCount > 0 && (
+          <div className="px-3.5 py-1.5 rounded-xl bg-gray-500/10 border border-gray-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+            <span className="text-gray-400 font-bold flex items-center gap-1">
+              ⚡ 其他活动
+            </span>
+            <span className="text-white font-bold">{stats.otherCount} 次</span>
+            <span className="text-gray-400 text-[10px]">
+              ({parseFloat(stats.otherDistanceKm) > 0 ? `${stats.otherDistanceKm} km` : stats.otherTimeStr})
+            </span>
           </div>
         )}
       </div>
