@@ -129,9 +129,9 @@ const Index = () => {
       </Helmet>
 
       {/* 顶部标题与月度切换器 */}
-      <div className="w-full pt-6 mb-6">
-        <div className="flex flex-col items-center space-y-4">
-          <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase border-b-4 border-red-500 pb-2">
+      <div className="w-full pt-4 mb-4">
+        <div className="flex flex-col items-center space-y-2.5">
+          <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase border-b-4 border-red-500 pb-1.5">
             <a href={siteUrl}>{siteTitle}</a>
           </h1>
 
@@ -147,8 +147,8 @@ const Index = () => {
       </div>
 
       {/* 主展示区：月度总结 + TrackWall 旋转星系 */}
-      <div className="w-full mb-16" id="map-container">
-        <div className="bg-[#0a0a0a] p-6 md:p-8 rounded-[3rem] shadow-2xl border border-white/5 overflow-hidden relative">
+      <div className="w-full mb-10" id="map-container">
+        <div className="bg-[#0a0a0a] p-4 md:p-6 rounded-[2rem] shadow-2xl border border-white/5 overflow-hidden relative">
           {/* 月度数据指标看板 */}
           <MonthlyStatsHeader
             year={selectedYear}
@@ -161,7 +161,7 @@ const Index = () => {
         </div>
 
         {/* 当月详细活动表格 */}
-        <div className="mt-12">
+        <div className="mt-6">
           <div className="flex items-center justify-between mb-4 px-2">
             <h3 className="text-xl font-bold font-mono text-white tracking-wider flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block animate-pulse" />

@@ -42,15 +42,15 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
   const totalYearCount = Object.values(monthCounts).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="w-full flex flex-col items-center space-y-3 my-4">
+    <div className="w-full flex flex-col items-center space-y-2 my-2">
       {/* 快捷年份选择标签栏 */}
       {availableYears.length > 1 && (
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-1">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 mb-0.5">
           {availableYears.map((y) => (
             <button
               key={y}
               onClick={() => onSelectMonth(y, currentMonth)}
-              className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition-all ${
+              className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold transition-all ${
                 y === currentYear
                   ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
                   : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 border border-white/10'
@@ -63,20 +63,20 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
       )}
 
       {/* 主月份切换控制条 */}
-      <div className="flex items-center space-x-3 bg-black/60 border border-white/10 px-5 py-2.5 rounded-full shadow-2xl backdrop-blur-xl">
+      <div className="flex items-center space-x-2.5 bg-black/60 border border-white/10 px-4 py-2 rounded-full shadow-2xl backdrop-blur-xl">
         <button
           onClick={handlePrev}
-          className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/15 active:scale-95 text-white/80 hover:text-white flex items-center justify-center transition-all text-sm font-bold border border-white/10"
+          className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 active:scale-95 text-white/80 hover:text-white flex items-center justify-center transition-all text-xs font-bold border border-white/10"
           title="上一个"
         >
           ◀
         </button>
 
-        <div className="flex items-baseline space-x-2 px-3">
-          <span className="text-3xl md:text-4xl font-black font-mono tracking-tighter text-white">
+        <div className="flex items-baseline space-x-2 px-2.5">
+          <span className="text-2xl md:text-3xl font-black font-mono tracking-tighter text-white">
             {currentMonth === 0 ? `${currentYear} 全年` : `${currentYear}.${monthStr}`}
           </span>
-          <span className={`text-xs uppercase font-mono tracking-widest font-bold ${
+          <span className={`text-[11px] uppercase font-mono tracking-widest font-bold ${
             currentMonth === 0 ? 'text-amber-400' : 'text-red-500'
           }`}>
             {currentMonth === 0 ? 'ANNUAL' : 'MONTH'}
@@ -85,7 +85,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
 
         <button
           onClick={handleNext}
-          className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/15 active:scale-95 text-white/80 hover:text-white flex items-center justify-center transition-all text-sm font-bold border border-white/10"
+          className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 active:scale-95 text-white/80 hover:text-white flex items-center justify-center transition-all text-xs font-bold border border-white/10"
           title="下一个"
         >
           ▶
