@@ -6,6 +6,7 @@ import {
   RunIds,
   getClimbCategory,
   isManualClimbRecord,
+  isFitnessActivity,
   M_TO_DIST,
   M_TO_ELEV,
 } from '@/utils/utils';
@@ -28,10 +29,17 @@ const RunRow = ({
   setRunIndex,
 }: IRunRowProperties) => {
   const climbCat = getClimbCategory(run);
+  const isFitness = isFitnessActivity(run);
   const isManual = climbCat ? isManualClimbRecord(run) : false;
 
-  const distance = isManual ? '-' : (run.distance / M_TO_DIST).toFixed(2);
-  const paceParts = climbCat ? null : (run.average_speed ? formatPace(run.average_speed) : null);
+  const distance = isManual
+    ? '-'
+    : isFitness
+    ? run.distance > 0
+      ? (run.distance / M_TO_DIST).toFixed(2)
+      : '-'
+    : (run.distance / M_TO_DIST).toFixed(2);
+  const paceParts = (climbCat || isFitness) ? null : (run.average_speed ? formatPace(run.average_speed) : null);
   const heartRate = run.average_heartrate;
   const runTime = isManual ? '手动打卡' : formatRunTime(run.moving_time);
   const handleClick = () => {
@@ -52,6 +60,22 @@ const RunRow = ({
     >
       <td>
         {titleForRun(run)}
+        {isFitness && (
+          <span
+            style={{
+              marginLeft: '6px',
+              padding: '1px 6px',
+              fontSize: '10px',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(204, 255, 0, 0.15)',
+              color: '#ccff00',
+              border: '1px solid rgba(204, 255, 0, 0.35)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            🏋️ 室内健身
+          </span>
+        )}
         {climbCat === 'indoor_bouldering' && (
           <span
             style={{

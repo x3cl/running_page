@@ -272,7 +272,10 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
     };
   }, [activities]);
 
+  const isAnnual = month === 0;
   const monthStr = month < 10 ? `0${month}` : `${month}`;
+  const displayTitle = isAnnual ? `${year} 全年` : `${year}.${monthStr}`;
+  const scopeBadge = isAnnual ? 'Annual Scope' : 'Monthly Scope';
 
   return (
     <div className="w-full mb-8">
@@ -281,14 +284,14 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
         <div className="space-y-2">
           <div className="flex items-center space-x-3">
             <span className="px-3 py-1 bg-red-600/20 border border-red-500/40 text-red-400 font-mono text-xs uppercase tracking-widest rounded-full font-bold">
-              Monthly Scope
+              {scopeBadge}
             </span>
             <span className="text-gray-400 font-mono text-xs tracking-widest uppercase">
               Organic Tangency Trace Network
             </span>
           </div>
           <h2 className="text-5xl md:text-6xl font-black italic text-white tracking-tighter uppercase leading-none">
-            {year}.{monthStr} <span className="text-red-600 font-outline-2">SUMMARY</span>
+            {displayTitle} <span className="text-red-600 font-outline-2">SUMMARY</span>
           </h2>
         </div>
 
