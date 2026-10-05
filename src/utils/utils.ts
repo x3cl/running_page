@@ -426,6 +426,18 @@ const getActivitySport = (act: Activity): string => {
 };
 
 const titleForRun = (run: Activity): string => {
+  if (isFitnessActivity(run)) {
+    return run.name || '室内健身训练';
+  }
+  const climbCat = getClimbCategory(run);
+  if (climbCat === 'indoor_bouldering') return run.name || '室内抱石';
+  if (climbCat === 'indoor_climbing') return run.name || '室内高壁攀岩';
+  if (climbCat === 'outdoor_climbing') return run.name || '室外野攀';
+  if (run.type && run.type.includes('ski')) return run.name || '高山滑雪';
+  if (run.type && (run.type.includes('cycling') || run.type.includes('ride'))) return run.name || '骑行训练';
+  if (run.type && run.type.includes('hike')) return run.name || '徒步登山';
+  if (run.type && run.type.includes('swim')) return run.name || '游泳水上';
+
   if (RICH_TITLE) {
     // 1. try to use user defined name
     if (run.name != '') {

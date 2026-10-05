@@ -79,6 +79,9 @@ const Index = () => {
 
   // 过滤出当前选中年月的全部运动记录
   const monthPrefix = useMemo(() => {
+    if (selectedMonth === 0) {
+      return `${selectedYear}-`;
+    }
     const mStr = selectedMonth < 10 ? `0${selectedMonth}` : `${selectedMonth}`;
     return `${selectedYear}-${mStr}`;
   }, [selectedYear, selectedMonth]);
@@ -162,7 +165,7 @@ const Index = () => {
           <div className="flex items-center justify-between mb-4 px-2">
             <h3 className="text-xl font-bold font-mono text-white tracking-wider flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block animate-pulse" />
-              {selectedYear}年 {selectedMonth}月 详细记录 ({monthlyActivities.length} 项)
+              {selectedYear}年 {selectedMonth === 0 ? '全年' : `${selectedMonth}月`} 详细记录 ({monthlyActivities.length} 项)
             </h3>
           </div>
           <RunTable
