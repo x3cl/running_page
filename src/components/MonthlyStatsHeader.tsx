@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { getClimbCategory, isManualClimbRecord } from '@/utils/utils';
+import { getClimbCategory, isManualClimbRecord, isFitnessActivity } from '@/utils/utils';
 
 interface MonthlyStatsHeaderProps {
   year: number;
@@ -96,7 +96,12 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
     let swimDistMeters = 0;
     let swimSecs = 0;
 
-    // 10. 其他运动 (Other)
+    // 10. 室内健身 (Fitness / Strength Training)
+    let fitnessCount = 0;
+    let fitnessDistMeters = 0;
+    let fitnessSecs = 0;
+
+    // 11. 其他运动 (Other)
     let otherCount = 0;
     let otherDistMeters = 0;
     let otherSecs = 0;
@@ -196,6 +201,11 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
         swimCount++;
         swimDistMeters += dist;
         swimSecs += secs;
+      } else if (isFitnessActivity(act)) {
+        // 室内健身 / 力量训练 (Fitness / Strength Training)
+        fitnessCount++;
+        fitnessDistMeters += dist;
+        fitnessSecs += secs;
       } else {
         // 其他活动 (Other Sports)
         otherCount++;
@@ -251,7 +261,11 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
       swimCount,
       swimDistanceKm: (swimDistMeters / 1000).toFixed(1),
       swimTimeStr: formatHours(swimSecs),
-      // 10. 其他
+      // 10. 室内健身
+      fitnessCount,
+      fitnessDistanceKm: (fitnessDistMeters / 1000).toFixed(1),
+      fitnessTimeStr: formatHours(fitnessSecs),
+      // 11. 其他
       otherCount,
       otherDistanceKm: (otherDistMeters / 1000).toFixed(1),
       otherTimeStr: formatHours(otherSecs),
@@ -447,7 +461,19 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
           </div>
         )}
 
-        {/* 10. ⚡ 其他小项目 */}
+        {/* 10. 🏋️ 室内健身 */}
+        {stats.fitnessCount > 0 && (
+          <div className="px-3.5 py-1.5 rounded-xl bg-lime-500/15 border border-lime-400/50 text-xs font-mono text-lime-200 flex items-center space-x-2 shadow-lg shadow-lime-500/10">
+            <span className="text-lime-400 font-black flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
+              🏋️ 室内健身
+            </span>
+            <span className="text-white font-black">{stats.fitnessCount} 次</span>
+            <span className="text-lime-300/80 text-[10px]">({stats.fitnessTimeStr})</span>
+          </div>
+        )}
+
+        {/* 11. ⚡ 其他小项目 */}
         {stats.otherCount > 0 && (
           <div className="px-3.5 py-1.5 rounded-xl bg-gray-500/10 border border-gray-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
             <span className="text-gray-400 font-bold flex items-center gap-1">
