@@ -133,6 +133,7 @@ export const isFitnessActivity = (activity: {
 
   return (
     type === 'generic' ||
+    type === 'fitness' ||
     type.includes('fitness') ||
     type.includes('strength') ||
     type.includes('workout') ||
@@ -142,11 +143,15 @@ export const isFitnessActivity = (activity: {
     type.includes('weight') ||
     subtype.includes('strength') ||
     subtype.includes('fitness') ||
+    subtype.includes('workout') ||
+    subtype.includes('indoor') ||
+    type.includes('indoor') ||
     name.includes('健身') ||
     name.includes('力量') ||
     name.includes('训练') ||
     name.includes('撸铁') ||
-    name.includes('体能')
+    name.includes('体能') ||
+    name.includes('室内')
   );
 };
 
@@ -427,6 +432,9 @@ const getActivitySport = (act: Activity): string => {
 
 const titleForRun = (run: Activity): string => {
   if (isFitnessActivity(run)) {
+    if (run.subtype === 'indoor_running' || (run.type && run.type.toLowerCase().includes('indoor'))) {
+      return run.name || '室内跑步训练';
+    }
     return run.name || '室内健身训练';
   }
   const climbCat = getClimbCategory(run);

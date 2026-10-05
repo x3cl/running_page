@@ -101,13 +101,14 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
       if (isFitness) {
         items.push({
           id: activity.run_id || idx,
-          name: activity.name || '室内健身训练',
+          name: activity.name || (activity.subtype === 'indoor_running' ? '室内跑步训练' : '室内健身训练'),
           date: activity.start_date_local,
           distance: activity.distance,
           duration: activity.moving_time,
           heartrate: activity.average_heartrate,
           elevation: activity.elevation_gain || activity.total_elevation_gain,
-          type: 'fitness',
+          type: activity.type || 'fitness',
+          subtype: activity.subtype,
           category: 'fitness',
           isFitness: true,
           isManual: true,
@@ -166,10 +167,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         return;
       }
 
-      // 其他无 GPS 的运动记录（如室内跑步机等）
+      // 其他无 GPS 的运动记录（室内打卡）
       items.push({
         id: activity.run_id || idx,
-        name: activity.name || '室内运动',
+        name: activity.name || (activity.type === 'swimming' ? '泳池游泳训练' : '室内运动训练'),
         date: activity.start_date_local,
         distance: activity.distance,
         duration: activity.moving_time,
@@ -177,9 +178,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         elevation: activity.elevation_gain || activity.total_elevation_gain,
         type: activity.type,
         subtype: activity.subtype,
-        category: 'indoor_workout',
+        category: 'fitness',
+        isFitness: true,
         isManual: true,
-        color: getActivityColor(activity.type, activity.name, activity.subtype),
+        color: '#ccff00',
       });
     });
 
@@ -705,33 +707,31 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                 );
               }
 
-              // 4. 其他室内无 GPS 活动节点（例如跑步机、室内器械）
+              // 4. 其他室内无 GPS 活动节点（统一使用专属矢量小人图标，绝无红点）
               if (item.category === 'indoor_workout') {
                 return (
                   <g
-                    key={`workout-dot-${item.id}-${i}`}
-                    transform={`translate(${item.x}, ${item.y})`}
-                    className="pointer-events-auto climb-pebble-node"
+                    key={`workout-figure-${item.id}-${i}`}
+                    transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation || 0})`}
+                    className="pointer-events-auto climb-pebble-node group cursor-pointer transition-transform duration-300"
                     onMouseEnter={() => setHoveredItem(item)}
                   >
                     <circle
                       cx="0"
                       cy="0"
-                      r={6}
-                      fill={item.color}
-                      filter="url(#glow)"
-                      opacity={0.9}
-                    />
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r={10}
+                      r={13.5}
                       fill="none"
                       stroke={item.color}
                       strokeWidth={1}
-                      strokeDasharray="2 2"
-                      opacity={0.4}
+                      strokeDasharray="2.5 3"
+                      opacity={0.7}
                     />
+                    <g className="pebble-body" filter="url(#glow)">
+                      <path
+                        d={FITNESS_ICON_PATH}
+                        fill={item.color}
+                      />
+                    </g>
                   </g>
                 );
               }

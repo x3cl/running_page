@@ -135,6 +135,11 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
         outdoorClimbElevation += elev;
         outdoorClimbDistMeters += dist;
         outdoorClimbSecs += secs;
+      } else if (isFitnessActivity(act)) {
+        // 室内健身 / 力量训练 / 室内运动 (Fitness / Strength / Indoor Workout)
+        fitnessCount++;
+        fitnessDistMeters += dist;
+        fitnessSecs += secs;
       } else if (
         type.includes('trail') ||
         subtype.includes('trail') ||
@@ -201,11 +206,6 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
         swimCount++;
         swimDistMeters += dist;
         swimSecs += secs;
-      } else if (isFitnessActivity(act)) {
-        // 室内健身 / 力量训练 (Fitness / Strength Training)
-        fitnessCount++;
-        fitnessDistMeters += dist;
-        fitnessSecs += secs;
       } else {
         // 其他活动 (Other Sports)
         otherCount++;
@@ -471,8 +471,9 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
               <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
               🏋️ 室内健身
             </span>
-            <span className="text-white font-black">{stats.fitnessCount} 次</span>
-            <span className="text-lime-300/80 text-[10px]">({stats.fitnessTimeStr})</span>
+            <span className="text-lime-300/80 text-[10px]">
+              ({parseFloat(stats.fitnessDistanceKm) > 0 ? `${stats.fitnessDistanceKm} km, ` : ''}{stats.fitnessTimeStr})
+            </span>
           </div>
         )}
 

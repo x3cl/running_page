@@ -73,7 +73,7 @@ const RunRow = ({
               whiteSpace: 'nowrap',
             }}
           >
-            🏋️ 室内健身
+            {run.subtype === 'indoor_running' ? '🏃 室内跑步' : '🏋️ 室内健身'}
           </span>
         )}
         {climbCat === 'indoor_bouldering' && (
