@@ -278,60 +278,60 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
   const scopeBadge = isAnnual ? 'Annual Scope' : 'Monthly Scope';
 
   return (
-    <div className="w-full mb-8">
+    <div className="w-full mb-5">
       {/* 顶部标题与核心数据汇总 */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8 border-b border-white/10 pb-6 gap-6 relative z-10">
-        <div className="space-y-2">
-          <div className="flex items-center space-x-3">
-            <span className="px-3 py-1 bg-red-600/20 border border-red-500/40 text-red-400 font-mono text-xs uppercase tracking-widest rounded-full font-bold">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-4 border-b border-white/10 pb-4 gap-4 relative z-10">
+        <div className="space-y-1.5">
+          <div className="flex items-center space-x-2.5">
+            <span className="px-2.5 py-0.5 bg-red-600/20 border border-red-500/40 text-red-400 font-mono text-[11px] uppercase tracking-widest rounded-full font-bold">
               {scopeBadge}
             </span>
-            <span className="text-gray-400 font-mono text-xs tracking-widest uppercase">
+            <span className="text-gray-400 font-mono text-[11px] tracking-widest uppercase">
               Organic Tangency Trace Network
             </span>
           </div>
-          <h2 className="text-5xl md:text-6xl font-black italic text-white tracking-tighter uppercase leading-none">
+          <h2 className="text-3xl md:text-4xl font-black italic text-white tracking-tighter uppercase leading-none">
             {displayTitle} <span className="text-red-600 font-outline-2">SUMMARY</span>
           </h2>
         </div>
 
         {/* 四项总核心指标卡 */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 md:gap-8 w-full lg:w-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 w-full lg:w-auto">
           <div className="text-left lg:text-center group">
-            <div className="text-white text-4xl sm:text-5xl font-black font-mono leading-none tracking-tight">
+            <div className="text-white text-3xl sm:text-4xl font-black font-mono leading-none tracking-tight">
               {stats.totalActivities}
             </div>
-            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2 flex items-center lg:justify-center gap-1">
+            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1.5 flex items-center lg:justify-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-white/60 inline-block" />
               总运动次数
             </div>
           </div>
 
           <div className="text-left lg:text-center group">
-            <div className="text-white text-4xl sm:text-5xl font-black font-mono leading-none tracking-tight">
+            <div className="text-white text-3xl sm:text-4xl font-black font-mono leading-none tracking-tight">
               {stats.totalDistanceKm}
             </div>
-            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2 flex items-center lg:justify-center gap-1">
+            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1.5 flex items-center lg:justify-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
               总里程 (KM)
             </div>
           </div>
 
           <div className="text-left lg:text-center group">
-            <div className="text-[#2ecc71] text-4xl sm:text-5xl font-black font-mono leading-none tracking-tight">
+            <div className="text-[#2ecc71] text-3xl sm:text-4xl font-black font-mono leading-none tracking-tight">
               {stats.totalElevationM}
             </div>
-            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2 flex items-center lg:justify-center gap-1">
+            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1.5 flex items-center lg:justify-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2ecc71] inline-block" />
               累计爬升 (m)
             </div>
           </div>
 
           <div className="text-left lg:text-center group">
-            <div className="text-[#00ffff] text-4xl sm:text-5xl font-black font-mono leading-none tracking-tight">
+            <div className="text-[#00ffff] text-3xl sm:text-4xl font-black font-mono leading-none tracking-tight">
               {stats.totalDurationStr}
             </div>
-            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-2 flex items-center lg:justify-center gap-1">
+            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1.5 flex items-center lg:justify-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff] inline-block" />
               总有效时长
             </div>
@@ -340,10 +340,10 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
       </div>
 
       {/* 运动分类统计胶囊标签栏（路跑与越野跑分开，独立展示徒步、野攀、高壁、抱石、骑行等全部项目） */}
-      <div className="flex flex-wrap items-center gap-2.5 pt-2">
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         {/* 1. 🏃‍♂️ 路跑 */}
         {stats.roadRunCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+          <div className="px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
             <span className="text-red-400 font-bold flex items-center gap-1">
               🏃‍♂️ 路跑
             </span>
@@ -356,7 +356,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 2. 🏔️ 越野跑 */}
         {stats.trailRunCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-[#39ff14]/10 border border-[#39ff14]/30 text-xs font-mono text-gray-200 flex items-center space-x-2 shadow-lg shadow-[#39ff14]/5">
+          <div className="px-3 py-1 rounded-lg bg-[#39ff14]/10 border border-[#39ff14]/30 text-xs font-mono text-gray-200 flex items-center space-x-2 shadow-lg shadow-[#39ff14]/5">
             <span className="text-[#39ff14] font-bold flex items-center gap-1">
               🏔️ 越野跑
             </span>
@@ -369,7 +369,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 3. 🧗‍♂️ 室内抱石专属标签 */}
         {stats.boulderingCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-yellow-500/15 border border-yellow-400/50 text-xs font-mono text-yellow-200 flex items-center space-x-2 shadow-lg shadow-yellow-500/10">
+          <div className="px-3 py-1 rounded-lg bg-yellow-500/15 border border-yellow-400/50 text-xs font-mono text-yellow-200 flex items-center space-x-2 shadow-lg shadow-yellow-500/10">
             <span className="text-yellow-400 font-black flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
               🧗‍♂️ 室内抱石
@@ -381,7 +381,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 4. 🧗 室内高壁攀岩专属标签 */}
         {stats.indoorClimbCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-orange-500/15 border border-orange-400/50 text-xs font-mono text-orange-200 flex items-center space-x-2 shadow-lg shadow-orange-500/10">
+          <div className="px-3 py-1 rounded-lg bg-orange-500/15 border border-orange-400/50 text-xs font-mono text-orange-200 flex items-center space-x-2 shadow-lg shadow-orange-500/10">
             <span className="text-orange-400 font-black flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
               🧗 室内攀岩
@@ -393,7 +393,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 5. 🧗‍♀️ 室外野攀 Topo 专属标签 */}
         {stats.outdoorClimbCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-cyan-500/15 border border-cyan-400/50 text-xs font-mono text-cyan-200 flex items-center space-x-2 shadow-lg shadow-cyan-500/10">
+          <div className="px-3 py-1 rounded-lg bg-cyan-500/15 border border-cyan-400/50 text-xs font-mono text-cyan-200 flex items-center space-x-2 shadow-lg shadow-cyan-500/10">
             <span className="text-cyan-400 font-black flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
               🧗‍♀️ 室外野攀
@@ -414,7 +414,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 6. 🥾 徒步健走 */}
         {stats.hikeCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+          <div className="px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
             <span className="text-amber-400 font-bold flex items-center gap-1">
               🥾 徒步
             </span>
@@ -427,7 +427,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 7. 🚴 骑行 */}
         {stats.rideCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+          <div className="px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
             <span className="text-purple-400 font-bold flex items-center gap-1">
               🚴 骑行
             </span>
@@ -440,7 +440,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 8. ⛷️ 滑雪 */}
         {stats.skiCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-sky-500/10 border border-sky-400/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+          <div className="px-3 py-1 rounded-lg bg-sky-500/10 border border-sky-400/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
             <span className="text-sky-400 font-bold flex items-center gap-1">
               ⛷️ 滑雪
             </span>
@@ -453,7 +453,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 9. 🏊 水上/游泳 */}
         {stats.swimCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-400/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+          <div className="px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-400/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
             <span className="text-indigo-400 font-bold flex items-center gap-1">
               🏊 水上/游泳
             </span>
@@ -466,7 +466,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 10. 🏋️ 室内健身 */}
         {stats.fitnessCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-lime-500/15 border border-lime-400/50 text-xs font-mono text-lime-200 flex items-center space-x-2 shadow-lg shadow-lime-500/10">
+          <div className="px-3 py-1 rounded-lg bg-lime-500/15 border border-lime-400/50 text-xs font-mono text-lime-200 flex items-center space-x-2 shadow-lg shadow-lime-500/10">
             <span className="text-lime-400 font-black flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
               🏋️ 室内健身
@@ -478,7 +478,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
 
         {/* 11. ⚡ 其他小项目 */}
         {stats.otherCount > 0 && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-gray-500/10 border border-gray-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
+          <div className="px-3 py-1 rounded-lg bg-gray-500/10 border border-gray-500/30 text-xs font-mono text-gray-200 flex items-center space-x-2">
             <span className="text-gray-400 font-bold flex items-center gap-1">
               ⚡ 其他活动
             </span>
