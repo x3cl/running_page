@@ -355,8 +355,9 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
           };
         });
 
-        // 密集采样检测与前序所有活动点云的距离
-        const samplePts = finalPtsTrans.filter((_: any, i: number) => i % 3 === 0);
+        // 均衡采样检测与前序所有活动点云的距离（每次至多采样 15 点，避免长轨迹几十万次循环卡死）
+        const stride = Math.max(1, Math.floor(finalPtsTrans.length / 15));
+        const samplePts = finalPtsTrans.filter((_: any, i: number) => i % stride === 0);
         const col = occupiedPoints.some((op) =>
           samplePts.some((sp) => Math.hypot(sp.x - op.x, sp.y - op.y) < 11)
         );
@@ -416,9 +417,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         startPt: finalPtsTrans[0],
       });
 
-      // 将轨迹点加入占用点云
+      // 将轨迹点加入占用点云（每条轨迹至多加入 15 个代表点，避免全年全量数据下点云几何级膨胀）
+      const occStride = Math.max(1, Math.floor(finalPtsTrans.length / 15));
       finalPtsTrans.forEach((p, i) => {
-        if (i % 4 === 0) occupiedPoints.push(p);
+        if (i % occStride === 0) occupiedPoints.push(p);
       });
 
       prevExit = exitPt;
