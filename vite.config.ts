@@ -26,6 +26,9 @@ const colorClassMapping: { [key: string]: string } = {
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    port: 5174,
+  },
   plugins: [
     react(),
     tailwindcss(),

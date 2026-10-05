@@ -121,6 +121,35 @@ export const isManualClimbRecord = (activity: {
   return isZeroDist && isZeroTime;
 };
 
+export const isFitnessActivity = (activity: {
+  name?: string;
+  type?: string;
+  subtype?: string;
+}): boolean => {
+  if (!activity) return false;
+  const name = (activity.name || '').toLowerCase();
+  const type = (activity.type || '').toLowerCase();
+  const subtype = (activity.subtype || '').toLowerCase();
+
+  return (
+    type === 'generic' ||
+    type.includes('fitness') ||
+    type.includes('strength') ||
+    type.includes('workout') ||
+    type.includes('gym') ||
+    type.includes('crossfit') ||
+    type.includes('cardio') ||
+    type.includes('weight') ||
+    subtype.includes('strength') ||
+    subtype.includes('fitness') ||
+    name.includes('健身') ||
+    name.includes('力量') ||
+    name.includes('训练') ||
+    name.includes('撸铁') ||
+    name.includes('体能')
+  );
+};
+
 const titleForShow = (run: Activity): string => {
   const date = run.start_date_local.slice(0, 11);
   const distance = (run.distance / M_TO_DIST).toFixed(2);
@@ -390,6 +419,8 @@ const getActivitySport = (act: Activity): string => {
   // if act.type contains 'skiing'
   else if (act.type.includes('skiing')) {
     return ACTIVITY_TYPES.SKIING_TITLE;
+  } else if (isFitnessActivity(act)) {
+    return '健身';
   }
   return '';
 };
