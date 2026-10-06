@@ -165,6 +165,7 @@ export const MonthlyStatsHeader: React.FC<MonthlyStatsHeaderProps> = ({
         roadRunSecs += secs;
       } else if (
         type.includes('hike') ||
+        type.includes('hiking') ||
         type.includes('walk') ||
         name.includes('徒步') ||
         name.includes('健走')

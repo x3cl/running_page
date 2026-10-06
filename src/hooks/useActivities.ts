@@ -14,31 +14,9 @@ const standardizeCountryName = (country: string): string => {
 
 const useActivities = () => {
   const processedData = useMemo(() => {
-    const cities: Record<string, number> = {};
-    const runPeriod: Record<string, number> = {};
-    const provinces: Set<string> = new Set();
-    const countries: Set<string> = new Set();
+    // 快速提取年份（0.1ms 内完成），避免首页首屏执行 700+ 次地理逆编码与复杂正则
     const years: Set<string> = new Set();
-
     activities.forEach((run) => {
-      const location = locationForRun(run);
-
-      const periodName = titleForRun(run);
-      if (periodName) {
-        runPeriod[periodName] = runPeriod[periodName]
-          ? runPeriod[periodName] + 1
-          : 1;
-      }
-
-      const { city, province, country } = location;
-      // drop only one char city
-      if (city.length > 1) {
-        cities[city] = cities[city]
-          ? cities[city] + run.distance
-          : run.distance;
-      }
-      if (province) provinces.add(province);
-      if (country) countries.add(standardizeCountryName(country));
       const year = run.start_date_local.slice(0, 4);
       years.add(year);
     });
@@ -46,14 +24,66 @@ const useActivities = () => {
     const yearsArray = [...years].sort().reverse();
     const thisYear = yearsArray[0] || '';
 
+    // 惰性缓存：仅在访问 /summary 汇总面板时才执行全局聚合
+    let _summaryCache: {
+      cities: Record<string, number>;
+      runPeriod: Record<string, number>;
+      provinces: string[];
+      countries: string[];
+    } | null = null;
+
+    const getSummary = () => {
+      if (_summaryCache) return _summaryCache;
+      const cities: Record<string, number> = {};
+      const runPeriod: Record<string, number> = {};
+      const provinces: Set<string> = new Set();
+      const countries: Set<string> = new Set();
+
+      activities.forEach((run) => {
+        const location = locationForRun(run);
+
+        const periodName = titleForRun(run);
+        if (periodName) {
+          runPeriod[periodName] = runPeriod[periodName]
+            ? runPeriod[periodName] + 1
+            : 1;
+        }
+
+        const { city, province, country } = location;
+        if (city.length > 1) {
+          cities[city] = cities[city]
+            ? cities[city] + run.distance
+            : run.distance;
+        }
+        if (province) provinces.add(province);
+        if (country) countries.add(standardizeCountryName(country));
+      });
+
+      _summaryCache = {
+        cities,
+        runPeriod,
+        provinces: [...provinces],
+        countries: [...countries],
+      };
+      return _summaryCache;
+    };
+
     return {
       activities,
       years: yearsArray,
-      countries: [...countries],
-      provinces: [...provinces],
-      cities,
-      runPeriod,
       thisYear,
+      get countries() {
+        return getSummary().countries;
+      },
+      get provinces() {
+        return getSummary().provinces;
+      },
+      get cities() {
+        return getSummary().cities;
+      },
+      get runPeriod() {
+        return getSummary().runPeriod;
+      },
     };
   }, []); // Empty dependency array since activities is static
 

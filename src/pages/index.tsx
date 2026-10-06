@@ -1,11 +1,13 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { Helmet } from 'react-helmet-async';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import RunTable from '@/components/RunTable';
 import { TrackWall } from '@/components/TrackWall';
 import { MonthSelector } from '@/components/MonthSelector';
 import { MonthlyStatsHeader } from '@/components/MonthlyStatsHeader';
+import { ViewSwitcher } from '@/components/ViewSwitcher';
 import useActivities from '@/hooks/useActivities';
 import useSiteMetadata from '@/hooks/useSiteMetadata';
 import {
@@ -21,6 +23,11 @@ const Index = () => {
   const { siteTitle, siteUrl } = useSiteMetadata();
   const { activities, years } = useActivities();
   const { theme } = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const queryYear = searchParams.get('year');
+  const queryMonth = searchParams.get('month');
 
   // 计算默认月份：当前月份的前一个完整自然月（例如 9 月默认聚焦 8 月）
   const { defaultYear, defaultMonth } = useMemo(() => {
@@ -33,10 +40,42 @@ const Index = () => {
     return { defaultYear: curYear, defaultMonth: curMonth - 1 };
   }, []);
 
-  const [selectedYear, setSelectedYear] = useState<number>(defaultYear);
-  const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth);
+  const [selectedYear, setSelectedYear] = useState<number>(() => {
+    if (queryYear) {
+      const parsed = parseInt(queryYear, 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return defaultYear;
+  });
+
+  const [selectedMonth, setSelectedMonth] = useState<number>(() => {
+    if (queryMonth) {
+      const parsed = parseInt(queryMonth, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 12) return parsed;
+    }
+    return defaultMonth;
+  });
+
   const [runIndex, setRunIndex] = useState(-1);
   const [, setTitle] = useState('');
+
+  // 监听 URL 参数变化或当 queryMonth 为 0 时直接导航至全年独立大盘
+  useEffect(() => {
+    if (queryMonth === '0') {
+      navigate(`/annual?year=${queryYear || selectedYear}`, { replace: true });
+      return;
+    }
+    if (queryYear) {
+      const y = parseInt(queryYear, 10);
+      if (!isNaN(y) && y !== selectedYear) setSelectedYear(y);
+    }
+    if (queryMonth) {
+      const m = parseInt(queryMonth, 10);
+      if (!isNaN(m) && m !== selectedMonth && m >= 1 && m <= 12) {
+        setSelectedMonth(m);
+      }
+    }
+  }, [queryYear, queryMonth, selectedYear, selectedMonth, navigate]);
 
   // 确保当 activities 加载出来后，如果 defaultYear 没有任何活动，则自动选用有数据的最近年份
   useEffect(() => {
@@ -53,10 +92,11 @@ const Index = () => {
         if (!isNaN(y) && !isNaN(m)) {
           setSelectedYear(y);
           setSelectedMonth(m);
+          setSearchParams({ year: y.toString(), month: m.toString() }, { replace: true });
         }
       }
     }
-  }, [activities, selectedYear]);
+  }, [activities, selectedYear, setSearchParams]);
 
   // 计算当年每个月的活动数量
   const monthCounts = useMemo(() => {
@@ -95,11 +135,19 @@ const Index = () => {
     );
   }, [activities, monthPrefix]);
 
-  const handleSelectMonth = useCallback((y: number, m: number) => {
-    setSelectedYear(y);
-    setSelectedMonth(m);
-    setRunIndex(-1);
-  }, []);
+  const handleSelectMonth = useCallback(
+    (y: number, m: number) => {
+      if (m === 0) {
+        navigate(`/annual?year=${y}`);
+        return;
+      }
+      setSelectedYear(y);
+      setSelectedMonth(m);
+      setSearchParams({ year: y.toString(), month: m.toString() }, { replace: true });
+      setRunIndex(-1);
+    },
+    [navigate, setSearchParams]
+  );
 
   const locateActivity = useCallback(
     (runIds: RunIds) => {
@@ -132,8 +180,15 @@ const Index = () => {
       <div className="w-full pt-4 mb-4">
         <div className="flex flex-col items-center space-y-2.5">
           <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase border-b-4 border-red-500 pb-1.5">
-            <a href={siteUrl}>{siteTitle}</a>
+            <a href={import.meta.env.BASE_URL || '/'}>{siteTitle}</a>
           </h1>
+
+          {/* 顶层视图切换：月度精选 vs 全年大盘 */}
+          <ViewSwitcher
+            currentView="monthly"
+            currentYear={selectedYear}
+            currentMonth={selectedMonth}
+          />
 
           {/* 月度导航切换器 */}
           <MonthSelector

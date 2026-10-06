@@ -88,6 +88,8 @@ export const getClimbCategory = (activity: {
     name.includes('climboutdoor') ||
     name.includes('pitches') ||
     name.includes('野攀') ||
+    name.includes('户外攀登') ||
+    name.includes('攀登') ||
     (name.includes('climbing') && !name.includes('indoor') && !name.includes('室内')) ||
     (name.includes('climb') && !name.includes('indoor') && !name.includes('室内')) ||
     (name.includes('攀岩') && !name.includes('室内'));
@@ -125,8 +127,10 @@ export const isFitnessActivity = (activity: {
   name?: string;
   type?: string;
   subtype?: string;
+  start_date_local?: string;
 }): boolean => {
   if (!activity) return false;
+  if (getClimbCategory(activity)) return false;
   const name = (activity.name || '').toLowerCase();
   const type = (activity.type || '').toLowerCase();
   const subtype = (activity.subtype || '').toLowerCase();
@@ -443,7 +447,7 @@ const titleForRun = (run: Activity): string => {
   if (climbCat === 'outdoor_climbing') return run.name || '室外野攀';
   if (run.type && run.type.includes('ski')) return run.name || '高山滑雪';
   if (run.type && (run.type.includes('cycling') || run.type.includes('ride'))) return run.name || '骑行训练';
-  if (run.type && run.type.includes('hike')) return run.name || '徒步登山';
+  if (run.type && (run.type.includes('hike') || run.type.includes('hiking'))) return run.name || '徒步登山';
   if (run.type && run.type.includes('swim')) return run.name || '游泳水上';
 
   if (RICH_TITLE) {

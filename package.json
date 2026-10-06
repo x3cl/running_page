@@ -36,6 +36,8 @@
     "data:download:garmin": "python3 run_page/garmin_sync.py",
     "data:analysis": "python3 run_page/gen_svg.py --from-db --type github --output assets/github.svg",
     "build": "vite build",
+    "build:nas": "PATH_PREFIX=/coros/ vite build",
+    "deploy:nas": "PATH_PREFIX=/coros/ vite build && tar -C dist -cf - . | ssh x3cl@192.168.0.120 'tar -C /volume2/web/coros -xf -'",
     "develop": "vite dev",
     "dev": "vite dev",
     "serve": "vite serve",

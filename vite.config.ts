@@ -28,6 +28,13 @@ const colorClassMapping: { [key: string]: string } = {
 export default defineConfig({
   server: {
     port: 5174,
+    warmup: {
+      clientFiles: [
+        './src/main.tsx',
+        './src/pages/index.tsx',
+        './src/static/activities.json',
+      ],
+    },
   },
   plugins: [
     react(),

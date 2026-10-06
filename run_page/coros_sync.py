@@ -32,6 +32,7 @@ class Coros:
         self.password = password
         self.headers = None
         self.req = None
+        self.is_only_running = is_only_running
 
     async def login(self):
         url = COROS_URL_DICT.get("LOGIN_URL")
@@ -64,7 +65,6 @@ class Coros:
                 "accesstoken": access_token,
                 "cookie": f"CPL-coros-region=2; CPL-coros-token={access_token}",
             }
-            self.is_only_running = is_only_running
             self.req = httpx.AsyncClient(timeout=TIME_OUT, headers=self.headers)
         await client.aclose()
 
@@ -86,9 +86,10 @@ class Coros:
             for activity in activities:
                 label_id = activity["labelId"]
                 sport_type = activity["sportType"]
+                name = activity.get("name", "")
                 if label_id is None:
                     continue
-                all_activities_ids_types.append([label_id, sport_type])
+                all_activities_ids_types.append([label_id, sport_type, name])
 
             page_number += 1
 
@@ -150,6 +151,9 @@ async def download_and_generate(account, password, only_run, file_type):
     activity_infos = await coros.fetch_activity_ids_types(only_run=only_run)
     activity_ids = [i[0] for i in activity_infos]
     activity_types = [i[1] for i in activity_infos]
+    activity_title_dict = {
+        str(i[0]): i[2] for i in activity_infos if len(i) > 2 and i[2]
+    }
     activity_id_type_dict = dict(zip(activity_ids, activity_types))
     print("activity_ids: ", len(activity_ids))
     print("downloaded_ids: ", len(downloaded_ids))
@@ -168,7 +172,9 @@ async def download_and_generate(account, password, only_run, file_type):
     )
     print(f"Download finished. Elapsed {time.time()-start_time} seconds")
     await coros.req.aclose()
-    make_activities_file(SQL_FILE, folder, JSON_FILE, file_type)
+    make_activities_file(
+        SQL_FILE, folder, JSON_FILE, file_type, activity_title_dict=activity_title_dict
+    )
 
 
 async def gather_with_concurrency(n, tasks):

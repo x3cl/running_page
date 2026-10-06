@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface MonthSelectorProps {
   currentYear: number;
@@ -15,6 +16,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
   availableYears,
   monthCounts,
 }) => {
+  const navigate = useNavigate();
   const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   const handlePrev = () => {
@@ -94,23 +96,25 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
 
       {/* 全年 + 12个月份快捷选择条 */}
       <div className="flex flex-wrap justify-center gap-1.5 max-w-full px-2">
-        {/* 全年选项 */}
+        {/* 进入全年大盘独立界面 */}
         <button
-          onClick={() => onSelectMonth(currentYear, 0)}
-          className={`px-3.5 py-1 rounded-xl text-xs font-mono transition-all flex items-center space-x-1.5 border ${
+          onClick={() => navigate(`/annual?year=${currentYear}`)}
+          className={`px-3.5 py-1 rounded-xl text-xs font-mono transition-all flex items-center space-x-1.5 border cursor-pointer group ${
             currentMonth === 0
               ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white font-black border-amber-500 shadow-lg shadow-amber-500/30 scale-105 z-10'
-              : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30 hover:bg-white/10'
+              : 'bg-gradient-to-r from-red-600/25 to-amber-600/25 text-amber-300 border-amber-500/40 hover:border-amber-400 hover:from-red-600/40 hover:to-amber-600/40 shadow-sm'
           }`}
+          title={`进入 ${currentYear} 全年大盘独立界面`}
         >
-          <span>✨ 全年总览</span>
+          <span>🏆 全年大盘</span>
           <span
             className={`text-[9px] px-1 py-0.2 rounded-full font-bold ${
-              currentMonth === 0 ? 'bg-black/30 text-white' : 'bg-white/10 text-gray-400'
+              currentMonth === 0 ? 'bg-black/30 text-white' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
             }`}
           >
             {totalYearCount}
           </span>
+          <span className="text-[10px] group-hover:translate-x-0.5 transition-transform">→</span>
         </button>
 
         {months.map((m) => {
@@ -122,7 +126,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
             <button
               key={m}
               onClick={() => onSelectMonth(currentYear, m)}
-              className={`px-3 py-1 rounded-xl text-xs font-mono transition-all flex items-center space-x-1 border ${
+              className={`px-2 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-mono transition-all flex items-center space-x-1 border cursor-pointer ${
                 isSelected
                   ? 'bg-red-600 text-white font-black border-red-500 shadow-lg shadow-red-600/30 scale-105 z-10'
                   : hasActivities
