@@ -23,22 +23,29 @@
 
   /* Improve spacing on mobile */
   .lg\:p-16 {
-    padding: 1rem !important;
+    padding: 0.75rem !important;
+  }
+
+  /* Safe area padding for mobile notch displays */
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   /* Reduce title size on mobile */
   .text-5xl {
-    font-size: 2.5rem !important;
+    font-size: 2.25rem !important;
   }
 
   /* Optimize margin for mobile */
   .my-12 {
-    margin-top: 2rem !important;
-    margin-bottom: 2rem !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
   }
 
   .mt-6 {
-    margin-top: 1rem !important;
+    margin-top: 0.75rem !important;
   }
 }
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import polyline from '@mapbox/polyline';
 import { getClimbCategory, isManualClimbRecord, isFitnessActivity } from '@/utils/utils';
 
@@ -22,6 +22,13 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
   const [isAutoRotating, setIsAutoRotating] = useState(true);
   const [hoveredItem, setHoveredItem] = useState<any | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [showMobileLegend, setShowMobileLegend] = useState(false);
+
+  // 移动端手势与滚轮引用
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const touchStartPosRef = useRef({ x: 0, y: 0, time: 0 });
+  const pinchStartDistRef = useRef(0);
+  const pinchStartZoomRef = useRef(1);
 
   // 1. 赛博霓虹调色盘
   const getActivityColor = (type: string, name: string = '', subtype: string = '') => {
@@ -36,7 +43,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
     if (t.includes('ski') || t.includes('snowboard') || n.includes('滑雪')) return "#00f0ff"; // 冰川青
     if (t.includes('cycling') || t.includes('ride') || t.includes('biking') || n.includes('骑行')) return "#ff00ff"; // 极光紫 (Magenta)
     if (t.includes('swim') || t.includes('paddle') || t.includes('rowing') || n.includes('游泳') || n.includes('水上')) return "#7000ff"; // 霓虹深紫
-    if (t.includes('hike') || t.includes('walk') || n.includes('徒步') || n.includes('健走')) return "#ff9100"; // 徒步 炽热琥珀橙
+    if (t.includes('hike') || t.includes('hiking') || t.includes('walk') || n.includes('徒步') || n.includes('健走')) return "#ff9100"; // 徒步 炽热琥珀橙
     return "#ff3131"; // 路跑 赛博红 (Electric Red)
   };
 
@@ -61,7 +68,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
           name.includes('路跑') ||
           (name.includes('跑步') && !name.includes('越野'))) &&
         !isTrail;
-      const isHike = type.includes('hike') || type.includes('walk') || name.includes('徒步') || name.includes('健走');
+      const isHike = type.includes('hike') || type.includes('hiking') || type.includes('walk') || name.includes('徒步') || name.includes('健走');
       const isRide = type.includes('ride') || type.includes('cycling') || type.includes('biking') || name.includes('骑行');
       const isSki = type.includes('ski') || type.includes('snowboard') || name.includes('滑雪');
       const isSwim = type.includes('swim') || type.includes('paddle') || type.includes('rowing') || name.includes('游泳');
@@ -101,13 +108,14 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
       if (isFitness) {
         items.push({
           id: activity.run_id || idx,
-          name: activity.name || '室内健身训练',
+          name: activity.name || (activity.subtype === 'indoor_running' ? '室内跑步训练' : '室内健身训练'),
           date: activity.start_date_local,
           distance: activity.distance,
           duration: activity.moving_time,
           heartrate: activity.average_heartrate,
           elevation: activity.elevation_gain || activity.total_elevation_gain,
-          type: 'fitness',
+          type: activity.type || 'fitness',
+          subtype: activity.subtype,
           category: 'fitness',
           isFitness: true,
           isManual: true,
@@ -166,10 +174,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         return;
       }
 
-      // 其他无 GPS 的运动记录（如室内跑步机等）
+      // 其他无 GPS 的运动记录（室内打卡）
       items.push({
         id: activity.run_id || idx,
-        name: activity.name || '室内运动',
+        name: activity.name || (activity.type === 'swimming' ? '泳池游泳训练' : '室内运动训练'),
         date: activity.start_date_local,
         distance: activity.distance,
         duration: activity.moving_time,
@@ -177,9 +185,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         elevation: activity.elevation_gain || activity.total_elevation_gain,
         type: activity.type,
         subtype: activity.subtype,
-        category: 'indoor_workout',
+        category: 'fitness',
+        isFitness: true,
         isManual: true,
-        color: getActivityColor(activity.type, activity.name, activity.subtype),
+        color: '#ccff00',
       });
     });
 
@@ -453,6 +462,57 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
     setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
   };
 
+  const handleWheel = (e: React.WheelEvent) => {
+    const factor = e.deltaY < 0 ? 1.15 : 0.87;
+    setZoom((z) => Math.max(0.2, Math.min(5, z * factor)));
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      dragStartRef.current = { x: t.clientX - offset.x, y: t.clientY - offset.y };
+      touchStartPosRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+      setIsDragging(true);
+      setMousePos({ x: t.clientX, y: t.clientY });
+    } else if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchStartDistRef.current = dist;
+      pinchStartZoomRef.current = zoom;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDistRef.current > 0) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = dist / pinchStartDistRef.current;
+      setZoom(Math.max(0.2, Math.min(5, pinchStartZoomRef.current * ratio)));
+    } else if (e.touches.length === 1 && isDragging) {
+      const t = e.touches[0];
+      setOffset({
+        x: t.clientX - dragStartRef.current.x,
+        y: t.clientY - dragStartRef.current.y,
+      });
+      setMousePos({ x: t.clientX, y: t.clientY });
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      setIsDragging(false);
+      pinchStartDistRef.current = 0;
+    } else if (e.touches.length === 1) {
+      const t = e.touches[0];
+      dragStartRef.current = { x: t.clientX - offset.x, y: t.clientY - offset.y };
+      pinchStartDistRef.current = 0;
+    }
+  };
+
   // 格式化用时
   const formatTime = (time: any) => {
     if (!time) return 'N/A';
@@ -468,7 +528,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
   };
 
   return (
-    <div className="relative w-full h-[660px] bg-[#050508] rounded-[2rem] overflow-hidden select-none border border-white/5 shadow-2xl">
+    <div className="relative w-full h-[480px] sm:h-[560px] md:h-[660px] bg-[#050508] rounded-[2rem] overflow-hidden select-none border border-white/5 shadow-2xl">
       <style>{`
         @keyframes galaxyRotate {
           from { transform: rotate(0deg); }
@@ -523,19 +583,34 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
 
       {/* 居中水印 */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
-        <span className="text-[72px] font-black italic tracking-widest font-mono text-white">
+        <span className="text-3xl sm:text-5xl md:text-[72px] font-black italic tracking-widest font-mono text-white text-center px-4">
           ORGANIC NETWORK
         </span>
       </div>
 
+      {/* 移动端手势指引 */}
+      <div className="absolute top-4 right-4 z-30 sm:hidden pointer-events-none">
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-gray-400 border border-white/10 backdrop-blur-md">
+          👆 单指拖动 · 双指缩放
+        </span>
+      </div>
+
       <div
-        className="relative w-full h-full cursor-grab active:cursor-grabbing"
+        className="relative w-full h-full cursor-grab active:cursor-grabbing touch-none"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={() => setIsDragging(false)}
         onMouseLeave={() => {
           setIsDragging(false);
           setHoveredItem(null);
+        }}
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={() => {
+          setIsDragging(false);
+          pinchStartDistRef.current = 0;
         }}
       >
         <div
@@ -707,33 +782,31 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                 );
               }
 
-              // 4. 其他室内无 GPS 活动节点（例如跑步机、室内器械）
+              // 4. 其他室内无 GPS 活动节点（统一使用专属矢量小人图标，绝无红点）
               if (item.category === 'indoor_workout') {
                 return (
                   <g
-                    key={`workout-dot-${item.id}-${i}`}
-                    transform={`translate(${item.x}, ${item.y})`}
-                    className="pointer-events-auto climb-pebble-node"
+                    key={`workout-figure-${item.id}-${i}`}
+                    transform={`translate(${item.x}, ${item.y}) rotate(${item.rotation || 0})`}
+                    className="pointer-events-auto climb-pebble-node group cursor-pointer transition-transform duration-300"
                     onMouseEnter={() => setHoveredItem(item)}
                   >
                     <circle
                       cx="0"
                       cy="0"
-                      r={6}
-                      fill={item.color}
-                      filter="url(#glow)"
-                      opacity={0.9}
-                    />
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r={10}
+                      r={13.5}
                       fill="none"
                       stroke={item.color}
                       strokeWidth={1}
-                      strokeDasharray="2 2"
-                      opacity={0.4}
+                      strokeDasharray="2.5 3"
+                      opacity={0.7}
                     />
+                    <g className="pebble-body" filter="url(#glow)">
+                      <path
+                        d={FITNESS_ICON_PATH}
+                        fill={item.color}
+                      />
+                    </g>
                   </g>
                 );
               }
@@ -844,7 +917,55 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
           </div>
         )}
 
-        {/* 左下角图例 HUD (Legend) */}
+        {/* 移动端图例切换按钮 */}
+        <div className="absolute top-4 left-4 z-40 sm:hidden">
+          <button
+            onClick={() => setShowMobileLegend(!showMobileLegend)}
+            className="px-3 py-1 rounded-full bg-black/70 border border-white/20 text-[11px] font-mono text-gray-200 backdrop-blur-md shadow-lg active:scale-95 cursor-pointer"
+          >
+            {showMobileLegend ? '✕ 隐藏图例' : '🎨 颜色图例'}
+          </button>
+        </div>
+
+        {/* 移动端图例面板 */}
+        {showMobileLegend && (
+          <div className="absolute top-12 left-4 z-40 sm:hidden flex flex-col gap-1.5 p-3 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/20 shadow-2xl text-[11px] font-mono text-gray-300">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3.5 h-1 rounded-full bg-[#ff3131]" />
+              <span>路跑</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3.5 h-1 rounded-full bg-[#39ff14]" />
+              <span>越野跑</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3.5 h-1 rounded-full bg-[#ff9100]" />
+              <span>徒步</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3.5 h-1 rounded-full bg-[#ff00ff]" />
+              <span>骑行</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ccff00]" />
+              <span>室内健身</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00e5ff]" />
+              <span>室外野攀</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ff6a00]" />
+              <span>室内攀岩</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ffcc00]" />
+              <span>室内抱石</span>
+            </div>
+          </div>
+        )}
+
+        {/* 桌面端左下角图例 HUD (Legend) */}
         <div className="absolute bottom-8 left-8 z-40 hidden sm:flex flex-wrap items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 shadow-2xl pointer-events-none select-none text-[11px] font-mono text-gray-300">
           <div className="flex items-center gap-1.5">
             <span className="w-3.5 h-1 rounded-full bg-[#ff3131] inline-block shadow-[0_0_8px_#ff3131]" />
@@ -881,10 +1002,10 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
         </div>
 
         {/* 视口浮动控制条 */}
-        <div className="absolute bottom-8 right-8 z-40 flex flex-col space-y-3">
+        <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 z-40 flex flex-col space-y-2 sm:space-y-3">
           <button
             onClick={() => setIsAutoRotating(!isAutoRotating)}
-            className={`w-12 h-12 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md transition-all flex items-center justify-center text-lg ${
+            className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md transition-all flex items-center justify-center text-sm sm:text-lg cursor-pointer ${
               isAutoRotating
                 ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40'
                 : 'bg-white/5 text-white/70 hover:text-white'
@@ -895,14 +1016,14 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
           </button>
           <button
             onClick={() => setZoom((z) => Math.min(z * 1.35, 5))}
-            className="w-12 h-12 bg-white/5 hover:bg-cyan-500/20 active:scale-95 rounded-2xl border border-white/10 text-white shadow-2xl backdrop-blur-md transition-all flex items-center justify-center font-bold"
+            className="w-9 h-9 sm:w-12 sm:h-12 bg-white/5 hover:bg-cyan-500/20 active:scale-95 rounded-xl sm:rounded-2xl border border-white/10 text-white shadow-2xl backdrop-blur-md transition-all flex items-center justify-center font-bold text-xs sm:text-base cursor-pointer"
             title="放大"
           >
             ＋
           </button>
           <button
             onClick={() => setZoom((z) => Math.max(z * 0.75, 0.2))}
-            className="w-12 h-12 bg-white/5 hover:bg-cyan-500/20 active:scale-95 rounded-2xl border border-white/10 text-white shadow-2xl backdrop-blur-md transition-all flex items-center justify-center font-bold"
+            className="w-9 h-9 sm:w-12 sm:h-12 bg-white/5 hover:bg-cyan-500/20 active:scale-95 rounded-xl sm:rounded-2xl border border-white/10 text-white shadow-2xl backdrop-blur-md transition-all flex items-center justify-center font-bold text-xs sm:text-base cursor-pointer"
             title="缩小"
           >
             －
@@ -918,7 +1039,7 @@ export const TrackWall: React.FC<TrackWallProps> = ({ activities }) => {
                 setZoom(1);
               }
             }}
-            className="px-4 h-10 bg-white/5 hover:bg-cyan-500/20 active:scale-95 rounded-2xl border border-white/10 text-cyan-400 shadow-2xl backdrop-blur-md text-[10px] font-bold tracking-widest uppercase transition-all"
+            className="px-2.5 sm:px-4 h-8 sm:h-10 bg-white/5 hover:bg-cyan-500/20 active:scale-95 rounded-xl sm:rounded-2xl border border-white/10 text-cyan-400 shadow-2xl backdrop-blur-md text-[9px] sm:text-[10px] font-bold tracking-widest uppercase transition-all cursor-pointer flex items-center justify-center"
             title="重置视角"
           >
             Reset

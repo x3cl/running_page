@@ -126,7 +126,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
             <button
               key={m}
               onClick={() => onSelectMonth(currentYear, m)}
-              className={`px-3 py-1 rounded-xl text-xs font-mono transition-all flex items-center space-x-1 border ${
+              className={`px-2 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-mono transition-all flex items-center space-x-1 border cursor-pointer ${
                 isSelected
                   ? 'bg-red-600 text-white font-black border-red-500 shadow-lg shadow-red-600/30 scale-105 z-10'
                   : hasActivities

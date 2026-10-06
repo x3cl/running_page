@@ -10,8 +10,8 @@ interface ISiteMetadataResult {
 }
 
 const getBasePath = () => {
-  const baseUrl = import.meta.env.BASE_URL;
-  return baseUrl === '/' ? '' : baseUrl;
+  const baseUrl = import.meta.env.BASE_URL || '';
+  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 };
 
 const data: ISiteMetadataResult = {

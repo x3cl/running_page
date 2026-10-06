@@ -350,7 +350,7 @@ const AnnualPage = () => {
       <div className="w-full pt-4 mb-4">
         <div className="flex flex-col items-center space-y-2.5">
           <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase border-b-4 border-amber-500 pb-1.5">
-            <a href={siteUrl}>{siteTitle}</a>
+            <a href={import.meta.env.BASE_URL || '/'}>{siteTitle}</a>
           </h1>
 
           {/* 顶层视图切换：月度精选 vs 全年大盘 */}

@@ -30,7 +30,7 @@ const RouteErrorBoundary = () => (
       应用在渲染此视图时捕获到错误，请尝试刷新页面或返回首页。
     </p>
     <a
-      href="/"
+      href={import.meta.env.BASE_URL || '/'}
       className="px-5 py-2 bg-gradient-to-r from-red-600 to-amber-600 text-white rounded-full text-xs font-bold shadow-lg shadow-red-600/30 hover:scale-105 transition-all"
     >
       返回首页
