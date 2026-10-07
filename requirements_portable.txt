@@ -1,0 +1,11 @@
+httpx>=0.24.0
+aiofiles>=23.0.0
+garth>=0.4.30
+polyline>=2.0.0
+fit-tool>=0.0.8
+geopy>=2.3.0
+arrow>=1.2.0
+pytz
+haversine>=2.8.0
+tzfpy; platform_system != "Windows"
+timezonefinder; platform_system == "Windows"

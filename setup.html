@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Garmin 跑者大屏 - 本地生成向导</title>
+  <style>
+    :root {
+      --bg: #0b0d13;
+      --card-bg: rgba(22, 27, 39, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #ff6a00;
+      --accent-glow: rgba(255, 106, 0, 0.35);
+      --accent-cyan: #00d2ff;
+      --text: #f0f3f8;
+      --text-muted: #8a94a6;
+      --input-bg: rgba(13, 17, 26, 0.8);
+      --input-border: rgba(255, 255, 255, 0.12);
+      --success: #10b981;
+      --error: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(255, 106, 0, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(0, 210, 255, 0.06) 0%, transparent 40%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 540px;
+    }
+
+    .brand-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(255, 106, 0, 0.12);
+      border: 1px solid rgba(255, 106, 0, 0.3);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .brand-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 40%, #b8c2d1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cad3e0;
+      margin-bottom: 8px;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 46px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 12px;
+      padding: 0 14px;
+      color: #fff;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .toggle-pwd {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 4px;
+    }
+
+    .radio-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .radio-card {
+      position: relative;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .radio-card input {
+      position: absolute;
+      opacity: 0;
+    }
+
+    .radio-card.active {
+      border-color: var(--accent);
+      background: rgba(255, 106, 0, 0.08);
+    }
+
+    .radio-card .title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .radio-card .desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .privacy-box {
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .privacy-icon {
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .privacy-text {
+      font-size: 12px;
+      color: #a7f3d0;
+      line-height: 1.4;
+    }
+
+    .btn-submit {
+      width: 100%;
+      height: 50px;
+      background: linear-gradient(135deg, #ff7a18 0%, #ff5200 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 22px;
+      box-shadow: 0 8px 24px var(--accent-glow);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 28px rgba(255, 106, 0, 0.5);
+    }
+
+    .btn-submit:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* 进度卡片 */
+    #progress-panel {
+      display: none;
+      margin-top: 24px;
+      background: rgba(13, 17, 26, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .progress-step {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 106, 0, 0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .progress-pct {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff7a18, #00d2ff);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    .log-terminal {
+      background: #06080c;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      color: #94a3b8;
+      max-height: 130px;
+      overflow-y: auto;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .log-line-success { color: #34d399; }
+    .log-line-error { color: #f87171; }
+    .log-line-info { color: #38bdf8; }
+
+    /* 完成引导 */
+    #success-panel {
+      display: none;
+      text-align: center;
+      padding: 24px 0 8px;
+    }
+
+    .success-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      animation: bounce 1s infinite alternate;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-8px); }
+    }
+
+    .success-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .success-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: #556070;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="brand-header">
+      <div class="brand-badge">⚡ GARMIN PORTABLE</div>
+      <h1 class="brand-title">跑者大屏本地生成器</h1>
+      <p class="brand-subtitle">输入佳明账号一键生成您的专属运动大屏，数据与密码 100% 仅保存在本地</p>
+    </div>
+
+    <div class="card">
+      <form id="sync-form">
+        <!-- 账号 -->
+        <div class="form-group">
+          <label class="form-label" for="username">
+            佳明账号
+            <span class="form-hint">邮箱或手机号</span>
+          </label>
+          <div class="input-wrapper">
+            <input type="text" id="username" class="form-input" placeholder="输入 Garmin 登录账号" required autocomplete="username">
+          </div>
+        </div>
+
+        <!-- 密码 -->
+        <div class="form-group">
+          <label class="form-label" for="password">
+            佳明密码
+            <span class="form-hint">仅用于本地接口鉴权</span>
+          </label>
+          <div class="input-wrapper">
+            <input type="password" id="password" class="form-input" placeholder="输入 Garmin 登录密码" required autocomplete="current-password">
+            <button type="button" class="toggle-pwd" id="toggle-pwd">显示</button>
+          </div>
+        </div>
+
+        <!-- 账号区服 -->
+        <div class="form-group">
+          <label class="form-label">
+            账号所在地区
+            <span class="form-hint">国内账号请选中国区</span>
+          </label>
+          <div class="radio-grid">
+            <label class="radio-card active" id="card-cn">
+              <input type="radio" name="domain" value="CN" checked>
+              <span class="title">🇨🇳 佳明中国区</span>
+              <span class="desc">佳明运动 / Garmin.cn</span>
+            </label>
+            <label class="radio-card" id="card-global">
+              <input type="radio" name="domain" value="GLOBAL">
+              <span class="title">🌐 国际区</span>
+              <span class="desc">Garmin Connect Global</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 跑者昵称与范围 -->
+        <div class="form-group">
+          <label class="form-label" for="athlete_name">
+            大屏跑者昵称 (选填)
+            <span class="form-hint">默认展示在网页标题</span>
+          </label>
+          <div class="input-wrapper">
+            <input type="text" id="athlete_name" class="form-input" placeholder="例如：阿轩 / My Running">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">同步运动范围</label>
+          <div class="radio-grid">
+            <label class="radio-card active" id="card-all-sport">
+              <input type="radio" name="only_run" value="false" checked>
+              <span class="title">🏃‍♂️ 全部运动</span>
+              <span class="desc">跑步、骑行、徒步等</span>
+            </label>
+            <label class="radio-card" id="card-only-run">
+              <input type="radio" name="only_run" value="true">
+              <span class="title">👟 仅同步跑步</span>
+              <span class="desc">过滤掉非跑步项目</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 本地安全承诺 -->
+        <div class="privacy-box">
+          <span class="privacy-icon">🔒</span>
+          <div class="privacy-text">
+            <strong>纯本地隐私承诺：</strong>本程序完全运行在您当前电脑本地（<code>localhost</code>），没有第三方服务器中转。同步生成的轨迹全部存放在本程序 <code>data/</code> 文件夹中。
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btn-submit">
+          <span>🚀 开始生成我的运动大屏</span>
+        </button>
+      </form>
+
+      <!-- 实时同步进度面板 -->
+      <div id="progress-panel">
+        <div class="progress-header">
+          <div class="progress-step">
+            <div class="spinner"></div>
+            <span id="step-label">正在初始化...</span>
+          </div>
+          <div class="progress-pct" id="step-pct">0%</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-bar"></div>
+        </div>
+        <div class="log-terminal" id="log-terminal">准备开始同步...</div>
+      </div>
+
+      <!-- 成功面板 -->
+      <div id="success-panel">
+        <div class="success-icon">🎉</div>
+        <h2 class="success-title">大屏生成完成！</h2>
+        <p class="success-desc" id="success-msg">已成功从佳明拉取运动轨迹，并完成地图与数据渲染。</p>
+        <button type="button" class="btn-submit" id="btn-go-dashboard">
+          <span>进入我的专属跑者大屏</span>
+        </button>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      Powered by Running Page & Garmin Connect • 100% Local & Privacy First
+    </div>
+  </div>
+
+  <script>
+    // 密码显隐切换
+    const pwdInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('toggle-pwd');
+    toggleBtn.addEventListener('click', () => {
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        toggleBtn.textContent = '隐藏';
+      } else {
+        pwdInput.type = 'password';
+        toggleBtn.textContent = '显示';
+      }
+    });
+
+    // 单选卡片交互
+    document.querySelectorAll('.radio-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const input = card.querySelector('input');
+        input.checked = true;
+        const name = input.name;
+        document.querySelectorAll(`input[name="${name}"]`).forEach(el => {
+          el.closest('.radio-card').classList.remove('active');
+        });
+        card.classList.add('active');
+      });
+    });
+
+    // 表单提交与进度轮询
+    const form = document.getElementById('sync-form');
+    const submitBtn = document.getElementById('btn-submit');
+    const progressPanel = document.getElementById('progress-panel');
+    const successPanel = document.getElementById('success-panel');
+    const stepLabel = document.getElementById('step-label');
+    const stepPct = document.getElementById('step-pct');
+    const progressBar = document.getElementById('progress-bar');
+    const logTerminal = document.getElementById('log-terminal');
+    const btnGo = document.getElementById('btn-go-dashboard');
+
+    let pollTimer = null;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const is_cn = document.querySelector('input[name="domain"]:checked').value === 'CN';
+      const only_run = document.querySelector('input[name="only_run"]:checked').value === 'true';
+      const athlete_name = document.getElementById('athlete_name').value.trim();
+
+      if (!username || !password) {
+        alert('请输入账号和密码');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>正在连接 Garmin...</span>';
+      progressPanel.style.display = 'block';
+      logTerminal.textContent = '正在发起同步任务...\n';
+
+      try {
+        const res = await fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            password,
+            is_cn,
+            only_run,
+            athlete_name
+          })
+        });
+
+        const data = await res.json();
+        if (!data.ok) {
+          throw new Error(data.error || '启动同步失败');
+        }
+
+        // 开始轮询进度
+        startPolling();
+      } catch (err) {
+        alert('启动同步异常: ' + err.message);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>🚀 重新尝试生成</span>';
+      }
+    });
+
+    function appendLog(line, type = '') {
+      const cls = type ? `log-line-${type}` : '';
+      const div = document.createElement('div');
+      if (cls) div.className = cls;
+      div.textContent = line;
+      logTerminal.appendChild(div);
+      logTerminal.scrollTop = logTerminal.scrollHeight;
+    }
+
+    function startPolling() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        try {
+          const res = await fetch('/api/progress');
+          const data = await res.json();
+
+          if (data.step) stepLabel.textContent = data.step;
+          if (data.progress !== undefined) {
+            stepPct.textContent = data.progress + '%';
+            progressBar.style.width = data.progress + '%';
+          }
+
+          if (data.recent_logs && data.recent_logs.length > 0) {
+            logTerminal.innerHTML = '';
+            data.recent_logs.forEach(msg => {
+              let type = '';
+              if (msg.includes('成功') || msg.includes('完成') || msg.includes('OK')) type = 'success';
+              else if (msg.includes('失败') || msg.includes('错误') || msg.includes('Error')) type = 'error';
+              else if (msg.includes('正在') || msg.includes('已获取')) type = 'info';
+              appendLog(msg, type);
+            });
+          }
+
+          if (data.status === 'done') {
+            clearInterval(pollTimer);
+            progressPanel.style.display = 'none';
+            form.style.display = 'none';
+            successPanel.style.display = 'block';
+            if (data.total_activities) {
+              document.getElementById('success-msg').textContent = `成功同步 ${data.total_activities} 条运动记录，大屏已准备就绪！`;
+            }
+            // 3秒后自动跳转
+            let count = 3;
+            btnGo.textContent = `进入我的专属跑者大屏 (${count}s)`;
+            const countdown = setInterval(() => {
+              count--;
+              if (count <= 0) {
+                clearInterval(countdown);
+                window.location.href = '/';
+              } else {
+                btnGo.textContent = `进入我的专属跑者大屏 (${count}s)`;
+              }
+            }, 1000);
+            btnGo.onclick = () => {
+              clearInterval(countdown);
+              window.location.href = '/';
+            };
+          } else if (data.status === 'error') {
+            clearInterval(pollTimer);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>🚀 重新尝试生成</span>';
+            appendLog('❌ 同步中断: ' + (data.error || '未知错误'), 'error');
+            alert('同步失败: ' + (data.error || '请检查账号密码或区服选择'));
+          }
+        } catch (e) {
+          console.warn('轮询状态异常', e);
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

@@ -18,7 +18,7 @@ import {
 } from 'recharts';
 import VirtualList from 'rc-virtual-list';
 import { useNavigate } from 'react-router-dom';
-import activities from '@/static/activities.json';
+import { getActivitiesData } from '@/utils/activitySource';
 import styles from './style.module.css';
 import { ACTIVITY_TOTAL, LOADING_TEXT } from '@/utils/const';
 import { totalStat, yearSummaryStats } from '@assets/index';
@@ -328,6 +328,7 @@ const activityCardAreEqual = (
 const ActivityCard = React.memo(ActivityCardInner, activityCardAreEqual);
 
 const ActivityList: React.FC = () => {
+  const activities = getActivitiesData();
   const [interval, setInterval] = useState<IntervalType>('month');
   const [sportType, setSportType] = useState<string>('all');
   const [sportTypeOptions, setSportTypeOptions] = useState<string[]>([]);

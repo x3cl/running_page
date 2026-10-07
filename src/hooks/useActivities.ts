@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { locationForRun, titleForRun } from '@/utils/utils';
-import activities from '@/static/activities.json';
+import { getActivitiesData } from '@/utils/activitySource';
 import { COUNTRY_STANDARDIZATION } from '@/static/city';
 
 const standardizeCountryName = (country: string): string => {
@@ -13,6 +13,7 @@ const standardizeCountryName = (country: string): string => {
 };
 
 const useActivities = () => {
+  const activities = getActivitiesData();
   const processedData = useMemo(() => {
     // 快速提取年份（0.1ms 内完成），避免首页首屏执行 700+ 次地理逆编码与复杂正则
     const years: Set<string> = new Set();

@@ -14,11 +14,11 @@ const getBasePath = () => {
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 };
 
-const data: ISiteMetadataResult = {
-  siteTitle: 'Running Page',
+const rawData: ISiteMetadataResult = {
+  siteTitle: 'Garmin Running Page',
   siteUrl: 'https://yihong.run',
   logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTtc69JxHNcmN1ETpMUX4dozAgAN6iPjWalQ&usqp=CAU',
-  description: 'Personal site and blog',
+  description: 'Personal sports page',
   navLinks: [
     {
       name: 'Annual',
@@ -29,14 +29,18 @@ const data: ISiteMetadataResult = {
       url: `${getBasePath()}/summary`,
     },
     {
-      name: 'Blog',
-      url: 'https://github.com/yihong0618/gitblog',
-    },
-    {
       name: 'About',
       url: 'https://github.com/yihong0618/running_page/blob/master/README-CN.md',
     },
   ],
 };
 
-export default data;
+const getSiteData = (): ISiteMetadataResult => {
+  if (typeof window !== 'undefined' && (window as any).__SITE_METADATA__) {
+    return { ...rawData, ...(window as any).__SITE_METADATA__ };
+  }
+  return rawData;
+};
+
+export default getSiteData();
+
